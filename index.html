@@ -1042,7 +1042,7 @@ body.admin-mode .admin-only-table { display: table-cell !important; }
 
 const ADMIN_PASSWORD = 'dsob2025';
 const STORAGE_KEY = 'dsob_golf_data';
-const DATA_VERSION = 2;
+const DATA_VERSION = 4;
 let isAdmin = false;
 
 // ── Member colors for avatars ──
@@ -1099,21 +1099,19 @@ let DATA;
 
 function loadData() {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    const savedVersion = parseInt(localStorage.getItem(STORAGE_KEY + '_version')) || 0;
-    if (saved && savedVersion >= DATA_VERSION) {
-      DATA = JSON.parse(saved);
-      const def = getDefaultData();
-      if (!DATA.deposits) DATA.deposits = def.deposits;
-      if (!DATA.expenses) DATA.expenses = def.expenses;
-      if (!DATA.contacts) DATA.contacts = def.contacts;
-      if (!DATA.awards) DATA.awards = def.awards;
-      if (!DATA.rounds) DATA.rounds = def.rounds;
-      if (!DATA.members) DATA.members = def.members;
-    } else {
-      DATA = getDefaultData();
-      saveData();
+    const savedVersion = parseInt(localStorage.getItem(STORAGE_KEY + '_ver')) || 0;
+    if (savedVersion >= DATA_VERSION) {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        DATA = JSON.parse(saved);
+        return;
+      }
     }
+    // Version mismatch or no data - reset
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY + '_version');
+    DATA = getDefaultData();
+    saveData();
   } catch(e) {
     DATA = getDefaultData();
     saveData();
@@ -1123,7 +1121,7 @@ function loadData() {
 function saveData() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA));
-    localStorage.setItem(STORAGE_KEY + '_version', DATA_VERSION);
+    localStorage.setItem(STORAGE_KEY + '_ver', DATA_VERSION);
   } catch(e) {
     showToast('저장 공간이 부족합니다');
   }
