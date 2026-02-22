@@ -981,7 +981,7 @@ body.admin-mode .admin-only-table { display: table-cell !important; }
       <div class="card-header">
         <div>
           <div class="card-title">&#54252;&#49345; &#45236;&#50669;</div>
-          <div class="card-subtitle">&#50669;&#45824; &#49688;&#49345; &#44592;&#47197;</div>
+          <div class="card-subtitle">2026&#45380; &#49688;&#49345; &#44592;&#47197;</div>
         </div>
         <button class="btn btn-primary admin-only" onclick="openAwardModal()">+ &#54252;&#49345; &#52628;&#44032;</button>
       </div>
@@ -1413,6 +1413,10 @@ function renderRounds() {
 
   const sorted = [...DATA.rounds].sort((a,b) => b.date.localeCompare(a.date));
   let html = '';
+  if (sorted.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px">라운드 기록이 없습니다. 관리자 모드에서 추가하세요.</td></tr>';
+    return;
+  }
   sorted.forEach(r => {
     const best = getBestScore(r);
     html += `<tr class="round-detail-row" onclick="showRoundDetail(${r.id})">
@@ -1492,7 +1496,7 @@ function openRoundModal(editId) {
             </div>
             <div class="form-group">
               <label class="form-label">차수</label>
-              <input class="form-input" id="rLabel" placeholder="예: 25-9차" value="${r ? r.label || '' : ''}">
+              <input class="form-input" id="rLabel" placeholder="예: 26-1차" value="${r ? r.label || '' : ''}">
             </div>
           </div>
           <div class="form-group">
@@ -1599,6 +1603,7 @@ function renderFinance() {
       </td>
     </tr>`;
   });
+  if (DATA.deposits.length === 0) dhtml = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px">입금 내역이 없습니다. 관리자 모드에서 추가하세요.</td></tr>';
   dtbody.innerHTML = dhtml;
 
   // Expenses table
@@ -1621,6 +1626,7 @@ function renderFinance() {
       </td>
     </tr>`;
   });
+  if (DATA.expenses.length === 0) ehtml = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px">지출 내역이 없습니다. 관리자 모드에서 추가하세요.</td></tr>';
   etbody.innerHTML = ehtml;
 }
 
@@ -1637,7 +1643,7 @@ function openDepositModal(editId) {
         <div class="modal-body">
           <div class="form-group">
             <label class="form-label">날짜</label>
-            <input class="form-input" id="dDate" value="${d ? d.date : ''}" placeholder="예: 2025-04">
+            <input class="form-input" id="dDate" value="${d ? d.date : ''}" placeholder="예: 2026-03">
           </div>
           <div class="form-group">
             <label class="form-label">내용</label>
@@ -1701,7 +1707,7 @@ function openExpenseModal(editId) {
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">날짜</label>
-              <input class="form-input" id="eDate" value="${e ? e.date : ''}" placeholder="예: 2025-03">
+              <input class="form-input" id="eDate" value="${e ? e.date : ''}" placeholder="예: 2026-03">
             </div>
             <div class="form-group">
               <label class="form-label">금액</label>
