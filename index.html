@@ -818,6 +818,20 @@ body.admin-mode .admin-only-table { display: table-cell !important; }
   .finance-summary { grid-template-columns: repeat(2, 1fr); }
   .finance-box-value { font-size: 18px; }
 }
+
+/* ── Companion Matrix ── */
+.companion-table { border-collapse: collapse; font-size: 12px; }
+.companion-table th, .companion-table td { padding: 6px 8px; text-align: center; border: 1px solid var(--sand-200); min-width: 40px; }
+.companion-table th { background: var(--green-50); color: var(--green-800); font-size: 11px; white-space: nowrap; }
+.companion-table th.row-header { text-align: left; font-size: 13px; }
+.companion-table td.self { background: var(--sand-200); color: var(--text-muted); }
+.companion-table td.count { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+.companion-table td.count-high { background: var(--green-100); color: var(--green-700); font-weight: 700; }
+.companion-table td.total-col { background: var(--gold-100); font-weight: 700; color: var(--green-900); }
+@media (max-width: 768px) {
+  .companion-table { font-size: 11px; }
+  .companion-table th, .companion-table td { padding: 4px 5px; min-width: 32px; }
+}
 </style>
 </head>
 <body>
@@ -844,6 +858,7 @@ body.admin-mode .admin-only-table { display: table-cell !important; }
     <div class="nav-item" data-page="rounds">&#46972;&#50868;&#46300;</div>
     <div class="nav-item" data-page="finance">&#51221;&#49328;/&#54924;&#48708;</div>
     <div class="nav-item" data-page="awards">&#54252;&#49345;</div>
+    <div class="nav-item" data-page="companion">&#46041;&#48152;&#51088;</div>
     <div class="nav-item" data-page="bylaws">&#51221;&#44288;</div>
     <div class="nav-item" data-page="contacts">&#50672;&#46973;&#52376;</div>
   </nav>
@@ -986,6 +1001,19 @@ body.admin-mode .admin-only-table { display: table-cell !important; }
         <button class="btn btn-primary admin-only" onclick="openAwardModal()">+ &#54252;&#49345; &#52628;&#44032;</button>
       </div>
       <div id="awardsContainer"></div>
+    </div>
+  </div>
+
+  <!-- Companion Matrix -->
+  <div class="page" id="page-companion">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">동반자 카운트</div>
+          <div class="card-subtitle">2026년 라운드 기록 기반 자동 집계</div>
+        </div>
+      </div>
+      <div class="table-wrap" id="companionMatrix"></div>
     </div>
   </div>
 
@@ -1242,6 +1270,7 @@ function renderAll() {
   renderRounds();
   renderFinance();
   renderAwards();
+  renderCompanion();
   renderBylaws();
   renderContacts();
 }
@@ -2049,6 +2078,62 @@ function renderBylaws() {
     <h3>부칙</h3>
     <p>본 정관은 총회에서 의결한 날부터 시행한다.</p>
   `;
+}
+
+// ── Companion Matrix ──
+function renderCompanion() {
+  const container = document.getElementById('companionMatrix');
+  const members = [...DATA.members].sort((a,b) => a.name.localeCompare(b.name, 'ko'));
+  const names = members.map(m => m.name);
+
+  if (DATA.rounds.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#128101;</div><div class="empty-state-text">라운드 기록이 쌓이면 동반자 카운트가 자동 집계됩니다</div></div>';
+    return;
+  }
+
+  // Build count matrix
+  const matrix = {};
+  names.forEach(n => { matrix[n] = {}; names.forEach(m => { matrix[n][m] = 0; }); });
+
+  DATA.rounds.forEach(r => {
+    const participants = r.scores.map(s => s.name);
+    for (let i = 0; i < participants.length; i++) {
+      for (let j = 0; j < participants.length; j++) {
+        if (i !== j && matrix[participants[i]] && matrix[participants[i]][participants[j]] !== undefined) {
+          matrix[participants[i]][participants[j]]++;
+        }
+      }
+    }
+  });
+
+  // Find max for highlighting
+  let maxCount = 0;
+  names.forEach(a => names.forEach(b => { if (a !== b && matrix[a][b] > maxCount) maxCount = matrix[a][b]; }));
+
+  // Build table
+  let html = '<table class="companion-table"><thead><tr><th></th>';
+  names.forEach(n => { html += `<th>${n.slice(0,1)}${n.slice(1,2)}</th>`; });
+  html += '<th style="background:var(--gold-100)">합계</th></tr></thead><tbody>';
+
+  names.forEach(row => {
+    html += `<tr><th class="row-header">${row}</th>`;
+    let rowTotal = 0;
+    names.forEach(col => {
+      if (row === col) {
+        html += '<td class="self">-</td>';
+      } else {
+        const cnt = matrix[row][col];
+        rowTotal += cnt;
+        let cls = 'count';
+        if (cnt > 0 && cnt >= maxCount) cls += ' count-high';
+        html += `<td class="${cls}">${cnt || ''}</td>`;
+      }
+    });
+    html += `<td class="total-col">${rowTotal}</td></tr>`;
+  });
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
 }
 
 // ── Contacts ──
