@@ -108,29 +108,6 @@ body {
   text-transform: uppercase;
 }
 
-.admin-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.admin-btn {
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.2);
-  color: var(--green-200);
-  padding: 8px 16px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 13px;
-  font-family: 'Noto Sans KR', sans-serif;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.admin-btn:hover { background: rgba(255,255,255,0.2); }
-.admin-btn.active { background: var(--gold-500); color: var(--green-900); border-color: var(--gold-500); font-weight: 600; }
 
 /* ── Navigation ── */
 .nav-bar {
@@ -357,12 +334,6 @@ tr:hover td { background: var(--green-50); }
 
 .btn-icon:hover { background: var(--sand-200); color: var(--text-primary); }
 
-.admin-only { display: none !important; }
-body.admin-mode .admin-only { display: inline-flex !important; }
-body.admin-mode .admin-only-block { display: block !important; }
-body.admin-mode .admin-only-table { display: table-cell !important; }
-.admin-only-block { display: none !important; }
-.admin-only-table { display: none !important; }
 
 /* ── Forms / Modals ── */
 .modal-overlay {
@@ -846,11 +817,6 @@ body.admin-mode .admin-only-table { display: table-cell !important; }
         <div class="logo-sub">2026 &middot; MEMBER ONLY</div>
       </div>
     </div>
-    <div class="admin-toggle">
-      <button class="admin-btn" id="adminBtn" onclick="toggleAdmin()">
-        &#128274; <span id="adminLabel">&#44288;&#47532;&#51088;</span>
-      </button>
-    </div>
   </div>
   <nav class="nav-bar" id="navBar">
     <div class="nav-item active" data-page="dashboard">&#45824;&#49884;&#48372;&#46300;</div>
@@ -889,7 +855,6 @@ body.admin-mode .admin-only-table { display: table-cell !important; }
           <div class="card-title">&#47716;&#48260; &#44288;&#47532;</div>
           <div class="card-subtitle" id="memberCount"></div>
         </div>
-        <button class="btn btn-primary admin-only" onclick="openMemberModal()">+ &#47716;&#48260; &#52628;&#44032;</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -901,7 +866,6 @@ body.admin-mode .admin-only-table { display: table-cell !important; }
               <th>모임중라베</th>
               <th>라운드수</th>
               <th>&#54217;&#44512;&#49828;&#53076;&#50612;</th>
-              <th class="admin-only-table">&#44288;&#47532;</th>
             </tr>
           </thead>
           <tbody id="memberTableBody"></tbody>
@@ -918,7 +882,6 @@ body.admin-mode .admin-only-table { display: table-cell !important; }
           <div class="card-title">&#46972;&#50868;&#46300; &#44592;&#47197;</div>
           <div class="card-subtitle" id="roundCount"></div>
         </div>
-        <button class="btn btn-primary admin-only" onclick="openRoundModal()">+ &#46972;&#50868;&#46300; &#52628;&#44032;</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -929,7 +892,6 @@ body.admin-mode .admin-only-table { display: table-cell !important; }
               <th>&#44264;&#54532;&#51109;</th>
               <th>&#52280;&#44032;&#51064;&#50896;</th>
               <th>&#48288;&#49828;&#53944;&#49828;&#53076;&#50612;</th>
-              <th class="admin-only-table">&#44288;&#47532;</th>
             </tr>
           </thead>
           <tbody id="roundTableBody"></tbody>
@@ -948,7 +910,6 @@ body.admin-mode .admin-only-table { display: table-cell !important; }
           <div class="card-title">&#51077;&#44552; &#45236;&#50669;</div>
           <div class="card-subtitle">&#49688;&#51077; &#44592;&#47197;</div>
         </div>
-        <button class="btn btn-primary btn-sm admin-only" onclick="openDepositModal()">+ &#51077;&#44552; &#52628;&#44032;</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -957,7 +918,6 @@ body.admin-mode .admin-only-table { display: table-cell !important; }
               <th>&#45216;&#51676;</th>
               <th>&#45236;&#50857;</th>
               <th>&#44552;&#50529;</th>
-              <th class="admin-only-table">&#44288;&#47532;</th>
             </tr>
           </thead>
           <tbody id="depositTableBody"></tbody>
@@ -971,7 +931,6 @@ body.admin-mode .admin-only-table { display: table-cell !important; }
           <div class="card-title">&#51648;&#52636; &#45236;&#50669;</div>
           <div class="card-subtitle">&#51648;&#52636; &#44592;&#47197;</div>
         </div>
-        <button class="btn btn-primary btn-sm admin-only" onclick="openExpenseModal()">+ &#51648;&#52636; &#52628;&#44032;</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -982,7 +941,6 @@ body.admin-mode .admin-only-table { display: table-cell !important; }
               <th>&#44552;&#50529;</th>
               <th>&#48708;&#44256;</th>
               <th>&#50689;&#49688;&#51613;</th>
-              <th class="admin-only-table">&#44288;&#47532;</th>
             </tr>
           </thead>
           <tbody id="expenseTableBody"></tbody>
@@ -999,7 +957,6 @@ body.admin-mode .admin-only-table { display: table-cell !important; }
           <div class="card-title">&#54252;&#49345; &#45236;&#50669;</div>
           <div class="card-subtitle">2026&#45380; &#49688;&#49345; &#44592;&#47197;</div>
         </div>
-        <button class="btn btn-primary admin-only" onclick="openAwardModal()">+ &#54252;&#49345; &#52628;&#44032;</button>
       </div>
       <div id="awardsContainer"></div>
     </div>
@@ -1068,10 +1025,8 @@ body.admin-mode .admin-only-table { display: table-cell !important; }
 // DS OB Golf Club Management Application
 // =============================================
 
-const ADMIN_PASSWORD = '7523';
 const STORAGE_KEY = 'dsob_golf_data';
-const DATA_VERSION = 8;
-let isAdmin = false;
+const DATA_VERSION = 9;
 
 // ── Member colors for avatars ──
 const COLORS = ['#2d6147','#378056','#45a068','#6bc088','#c8a84e','#d4b962','#1a3a2a','#234d38','#3b82f6','#d94452','#8b6914','#2563eb','#059669','#d97706','#7c3aed'];
@@ -1191,51 +1146,6 @@ function showToast(msg) {
 }
 
 // ── Admin Toggle ──
-function toggleAdmin() {
-  if (isAdmin) {
-    isAdmin = false;
-    document.body.classList.remove('admin-mode');
-    document.getElementById('adminBtn').classList.remove('active');
-    document.getElementById('adminLabel').textContent = '관리자';
-    showToast('관리자 모드를 종료했습니다');
-    return;
-  }
-  // Show password modal
-  const mc = document.getElementById('modalContainer');
-  mc.innerHTML = `
-    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
-      <div class="modal" style="max-width:400px">
-        <div class="modal-header">
-          <div class="modal-title">관리자 인증</div>
-          <button class="btn-icon" onclick="closeModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-          <p style="font-size:14px;color:var(--text-secondary)">관리자 비밀번호를 입력하세요.</p>
-          <div class="pw-input-wrap">
-            <input type="password" id="pwInput" placeholder="비밀번호" onkeyup="if(event.key==='Enter')checkPw()">
-            <button class="btn btn-primary" onclick="checkPw()">확인</button>
-          </div>
-          <div class="pw-error" id="pwError">비밀번호가 올바르지 않습니다.</div>
-        </div>
-      </div>
-    </div>`;
-  setTimeout(() => document.getElementById('pwInput').focus(), 100);
-}
-
-function checkPw() {
-  const pw = document.getElementById('pwInput').value;
-  if (pw === ADMIN_PASSWORD) {
-    isAdmin = true;
-    document.body.classList.add('admin-mode');
-    document.getElementById('adminBtn').classList.add('active');
-    document.getElementById('adminLabel').textContent = '관리자 ON';
-    closeModal();
-    showToast('관리자 모드가 활성화되었습니다');
-  } else {
-    document.getElementById('pwError').style.display = 'block';
-  }
-}
-
 function closeModal() {
   document.getElementById('modalContainer').innerHTML = '';
 }
@@ -1351,12 +1261,6 @@ function renderMembers() {
       <td style="font-family:'JetBrains Mono',monospace">${m.bestScore != null ? m.bestScore : '-'}</td>
       <td>${m.rounds || 0}</td>
       <td style="font-family:'JetBrains Mono',monospace">${m.avgScore != null ? m.avgScore : '-'}</td>
-      <td class="admin-only-table">
-        <div style="display:flex;gap:4px">
-          <button class="btn-icon" onclick="editMember(${m.id})" title="수정">&#9998;</button>
-          <button class="btn-icon" onclick="deleteMember(${m.id})" title="삭제" style="color:var(--red-500)">&#128465;</button>
-        </div>
-      </td>
     </tr>`;
   });
   tbody.innerHTML = html;
@@ -1451,7 +1355,7 @@ function renderRounds() {
   const sorted = [...DATA.rounds].sort((a,b) => b.date.localeCompare(a.date));
   let html = '';
   if (sorted.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px">라운드 기록이 없습니다. 관리자 모드에서 추가하세요.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px">라운드 기록이 없습니다. 아직 기록이 없습니다.</td></tr>';
     return;
   }
   sorted.forEach(r => {
@@ -1462,12 +1366,6 @@ function renderRounds() {
       <td>${r.course}</td>
       <td>${r.scores.length}명</td>
       <td style="font-family:'JetBrains Mono',monospace">${best}</td>
-      <td class="admin-only-table" onclick="event.stopPropagation()">
-        <div style="display:flex;gap:4px">
-          <button class="btn-icon" onclick="editRound(${r.id})" title="수정">&#9998;</button>
-          <button class="btn-icon" onclick="deleteRound(${r.id})" title="삭제" style="color:var(--red-500)">&#128465;</button>
-        </div>
-      </td>
     </tr>`;
   });
   tbody.innerHTML = html;
@@ -1632,15 +1530,9 @@ function renderFinance() {
       <td>${d.date}</td>
       <td>${d.desc}</td>
       <td style="font-family:'JetBrains Mono',monospace;color:var(--green-700)">${fmt(d.amount)}</td>
-      <td class="admin-only-table">
-        <div style="display:flex;gap:4px">
-          <button class="btn-icon" onclick="editDeposit(${d.id})" title="수정">&#9998;</button>
-          <button class="btn-icon" onclick="deleteDeposit(${d.id})" title="삭제" style="color:var(--red-500)">&#128465;</button>
-        </div>
-      </td>
     </tr>`;
   });
-  if (DATA.deposits.length === 0) dhtml = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px">입금 내역이 없습니다. 관리자 모드에서 추가하세요.</td></tr>';
+  if (DATA.deposits.length === 0) dhtml = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px">입금 내역이 없습니다. 아직 기록이 없습니다.</td></tr>';
   dtbody.innerHTML = dhtml;
 
   // Expenses table
@@ -1655,15 +1547,9 @@ function renderFinance() {
       <td style="font-family:'JetBrains Mono',monospace;color:${color}">${fmt(e.amount)}</td>
       <td>${e.note || ''}</td>
       <td>${receiptHtml}</td>
-      <td class="admin-only-table">
-        <div style="display:flex;gap:4px">
-          <button class="btn-icon" onclick="editExpense(${e.id})" title="수정">&#9998;</button>
-          <button class="btn-icon" onclick="deleteExpense(${e.id})" title="삭제" style="color:var(--red-500)">&#128465;</button>
-        </div>
-      </td>
     </tr>`;
   });
-  if (DATA.expenses.length === 0) ehtml = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px">지출 내역이 없습니다. 관리자 모드에서 추가하세요.</td></tr>';
+  if (DATA.expenses.length === 0) ehtml = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px">지출 내역이 없습니다. 아직 기록이 없습니다.</td></tr>';
   etbody.innerHTML = ehtml;
 }
 
