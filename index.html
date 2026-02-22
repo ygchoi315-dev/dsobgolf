@@ -1019,7 +1019,6 @@ body.admin-mode .admin-only-table { display: table-cell !important; }
               <th>&#49457;&#47749;</th>
               <th>&#50672;&#46973;&#52376;</th>
               <th>&#48708;&#44256;</th>
-              <th>26&#45380; &#54924;&#48708;</th>
             </tr>
           </thead>
           <tbody id="contactsTableBody"></tbody>
@@ -2062,7 +2061,6 @@ function renderContacts() {
       <td><div class="member-row"><div class="member-avatar" style="background:${getColor(c.name)}">${c.name.charAt(0)}</div>${c.name}</div></td>
       <td style="font-family:'JetBrains Mono',monospace">${c.phone}</td>
       <td><span class="badge ${c.note==='정회원'?'badge-green':'badge-gold'}">${c.note}</span></td>
-      <td>${c.fee}</td>
     </tr>`;
   });
   tbody.innerHTML = html;
