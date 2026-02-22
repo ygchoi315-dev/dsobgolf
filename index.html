@@ -897,8 +897,9 @@ body.admin-mode .admin-only-table { display: table-cell !important; }
             <tr>
               <th>&#51060;&#47492;</th>
               <th>&#44396;&#48516;</th>
-              <th>25&#45380; &#54217;&#44512;</th>
-              <th>&#46972;&#50868;&#46300;&#49688;</th>
+              <th>25년 평균</th>
+              <th>25년 최저타</th>
+              <th>라운드수</th>
               <th>&#54217;&#44512;&#49828;&#53076;&#50612;</th>
               <th class="admin-only-table">&#44288;&#47532;</th>
             </tr>
@@ -1069,7 +1070,7 @@ body.admin-mode .admin-only-table { display: table-cell !important; }
 
 const ADMIN_PASSWORD = '7523';
 const STORAGE_KEY = 'dsob_golf_data';
-const DATA_VERSION = 7;
+const DATA_VERSION = 8;
 let isAdmin = false;
 
 // ── Member colors for avatars ──
@@ -1085,19 +1086,19 @@ function getColor(name) {
 function getDefaultData() {
   return {
     members: [
-      { id: 1, name: '김창진', type: '정회원', handicap: 97.0, rounds: 0, avgScore: null },
-      { id: 2, name: '박인혁', type: '정회원', handicap: 101.1, rounds: 0, avgScore: null },
-      { id: 3, name: '배현준', type: '정회원', handicap: 89.4, rounds: 0, avgScore: null },
-      { id: 4, name: '승용수', type: '정회원', handicap: 93.0, rounds: 0, avgScore: null },
-      { id: 5, name: '이강진', type: '정회원', handicap: 86.7, rounds: 0, avgScore: null },
-      { id: 6, name: '이성재', type: '정회원', handicap: 85.7, rounds: 0, avgScore: null },
-      { id: 7, name: '이재국', type: '정회원', handicap: 95.0, rounds: 0, avgScore: null },
-      { id: 8, name: '이지훈', type: '정회원', handicap: 89.0, rounds: 0, avgScore: null },
-      { id: 9, name: '장민구', type: '정회원', handicap: 93.4, rounds: 0, avgScore: null },
-      { id: 10, name: '전형건', type: '정회원', handicap: 94.1, rounds: 0, avgScore: null },
-      { id: 11, name: '최영근', type: '정회원', handicap: 90.4, rounds: 0, avgScore: null },
-      { id: 12, name: '윤준원', type: '정회원', handicap: null, rounds: 0, avgScore: null },
-      { id: 13, name: '최기성', type: '정회원', handicap: null, rounds: 0, avgScore: null },
+      { id: 1, name: '김창진', type: '정회원', handicap: 97.0, bestScore: 94, rounds: 0, avgScore: null },
+      { id: 2, name: '박인혁', type: '정회원', handicap: 101.1, bestScore: 96, rounds: 0, avgScore: null },
+      { id: 3, name: '배현준', type: '정회원', handicap: 89.4, bestScore: 81, rounds: 0, avgScore: null },
+      { id: 4, name: '승용수', type: '정회원', handicap: 93.0, bestScore: 87, rounds: 0, avgScore: null },
+      { id: 5, name: '이강진', type: '정회원', handicap: 86.7, bestScore: 83, rounds: 0, avgScore: null },
+      { id: 6, name: '이성재', type: '정회원', handicap: 85.7, bestScore: 80, rounds: 0, avgScore: null },
+      { id: 7, name: '이재국', type: '정회원', handicap: 95.0, bestScore: 95, rounds: 0, avgScore: null },
+      { id: 8, name: '이지훈', type: '정회원', handicap: 89.0, bestScore: 82, rounds: 0, avgScore: null },
+      { id: 9, name: '장민구', type: '정회원', handicap: 93.4, bestScore: 86, rounds: 0, avgScore: null },
+      { id: 10, name: '전형건', type: '정회원', handicap: 94.1, bestScore: 89, rounds: 0, avgScore: null },
+      { id: 11, name: '최영근', type: '정회원', handicap: 90.4, bestScore: 84, rounds: 0, avgScore: null },
+      { id: 12, name: '윤준원', type: '정회원', handicap: null, bestScore: null, rounds: 0, avgScore: null },
+      { id: 13, name: '최기성', type: '정회원', handicap: null, bestScore: null, rounds: 0, avgScore: null },
     ],
     rounds: [],
     deposits: [],
@@ -1347,6 +1348,7 @@ function renderMembers() {
       <td><div class="member-row"><div class="member-avatar" style="background:${getColor(m.name)}">${m.name.charAt(0)}</div>${m.name}</div></td>
       <td><span class="badge ${m.type==='정회원'?'badge-green':'badge-gold'}">${m.type}</span></td>
       <td style="font-family:'JetBrains Mono',monospace">${m.handicap != null ? m.handicap : '-'}</td>
+      <td style="font-family:'JetBrains Mono',monospace">${m.bestScore != null ? m.bestScore : '-'}</td>
       <td>${m.rounds || 0}</td>
       <td style="font-family:'JetBrains Mono',monospace">${m.avgScore != null ? m.avgScore : '-'}</td>
       <td class="admin-only-table">
