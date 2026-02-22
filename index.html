@@ -242,7 +242,6 @@ body {
 .stat-icon.members { background: var(--green-100); }
 .stat-icon.rounds { background: var(--blue-100); }
 .stat-icon.finance { background: var(--gold-100); }
-.stat-icon.schedule { background: var(--red-100); }
 
 .stat-value {
   font-family: 'JetBrains Mono', monospace;
@@ -360,6 +359,10 @@ tr:hover td { background: var(--green-50); }
 
 .admin-only { display: none !important; }
 body.admin-mode .admin-only { display: inline-flex !important; }
+body.admin-mode .admin-only-block { display: block !important; }
+body.admin-mode .admin-only-table { display: table-cell !important; }
+.admin-only-block { display: none !important; }
+.admin-only-table { display: none !important; }
 
 /* ── Forms / Modals ── */
 .modal-overlay {
@@ -384,6 +387,8 @@ body.admin-mode .admin-only { display: inline-flex !important; }
   overflow-y: auto;
   box-shadow: var(--shadow-xl);
 }
+
+.modal.modal-lg { max-width: 720px; }
 
 .modal-header {
   padding: 20px 24px;
@@ -451,43 +456,6 @@ body.admin-mode .admin-only { display: inline-flex !important; }
   gap: 12px;
 }
 
-/* ── Receipt / Image Upload ── */
-.receipt-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
-}
-
-.receipt-card {
-  background: var(--white);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid rgba(0,0,0,0.04);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.receipt-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-
-.receipt-img {
-  width: 100%;
-  height: 180px;
-  object-fit: cover;
-  background: var(--sand-200);
-  cursor: pointer;
-}
-
-.receipt-info { padding: 12px; }
-.receipt-date { font-size: 12px; color: var(--text-muted); }
-.receipt-desc { font-size: 14px; font-weight: 500; margin-top: 4px; }
-.receipt-amount {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--green-700);
-  margin-top: 4px;
-}
-
 /* ── Bylaws ── */
 .bylaws-content {
   line-height: 1.9;
@@ -514,7 +482,30 @@ body.admin-mode .admin-only { display: inline-flex !important; }
 .bylaws-content ol, .bylaws-content ul { padding-left: 24px; margin-bottom: 12px; }
 .bylaws-content li { margin-bottom: 4px; }
 
+.bylaws-content .bylaws-account {
+  background: var(--gold-100);
+  border: 1px solid var(--gold-200);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--green-900);
+}
+
 /* ── Awards ── */
+.awards-month-section { margin-bottom: 32px; }
+
+.awards-month-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--green-900);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--gold-200);
+}
+
 .awards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -591,65 +582,6 @@ body.admin-mode .admin-only { display: inline-flex !important; }
   border-radius: 8px;
 }
 
-/* ── Schedule Timeline ── */
-.timeline { position: relative; padding-left: 32px; }
-.timeline::before {
-  content: '';
-  position: absolute;
-  left: 12px;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: var(--green-200);
-}
-
-.timeline-item {
-  position: relative;
-  margin-bottom: 24px;
-  padding: 16px 20px;
-  background: var(--white);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid rgba(0,0,0,0.04);
-}
-
-.timeline-item::before {
-  content: '';
-  position: absolute;
-  left: -26px;
-  top: 20px;
-  width: 12px;
-  height: 12px;
-  background: var(--green-500);
-  border-radius: 50%;
-  border: 2px solid var(--white);
-  box-shadow: var(--shadow-sm);
-}
-
-.timeline-item.past::before { background: var(--text-muted); }
-.timeline-item.upcoming::before { background: var(--gold-500); animation: pulse 2s infinite; }
-
-@keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(200,168,78,0.4); }
-  50% { box-shadow: 0 0 0 6px rgba(200,168,78,0); }
-}
-
-.timeline-date {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  color: var(--green-600);
-  font-weight: 500;
-}
-
-.timeline-title { font-size: 16px; font-weight: 600; margin-top: 4px; }
-.timeline-detail { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
-.timeline-participants {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 8px;
-}
-
 /* ── Finance Summary ── */
 .finance-summary {
   display: grid;
@@ -664,6 +596,7 @@ body.admin-mode .admin-only { display: inline-flex !important; }
   padding: 16px;
   text-align: center;
   border: 1px solid rgba(0,0,0,0.04);
+  box-shadow: var(--shadow-sm);
 }
 
 .finance-box-label { font-size: 13px; color: var(--text-muted); }
@@ -678,29 +611,15 @@ body.admin-mode .admin-only { display: inline-flex !important; }
 .finance-box-value.expense { color: var(--red-500); }
 .finance-box-value.balance { color: var(--green-900); }
 
-/* ── Scorecard Display ── */
-.scorecard-mini {
-  display: flex;
-  gap: 2px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
+/* ── Receipt ── */
+.receipt-thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid var(--sand-300);
 }
-
-.hole-score {
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  font-weight: 500;
-}
-
-.hole-score.birdie { background: #dbeafe; color: #2563eb; }
-.hole-score.par { background: var(--sand-200); color: var(--text-secondary); }
-.hole-score.bogey { background: #fef3c7; color: #d97706; }
-.hole-score.double-plus { background: #fde8ea; color: var(--red-500); }
-.hole-score.eagle { background: #d1fae5; color: #059669; }
 
 /* ── Empty State ── */
 .empty-state {
@@ -711,68 +630,6 @@ body.admin-mode .admin-only { display: inline-flex !important; }
 
 .empty-state-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
 .empty-state-text { font-size: 15px; }
-
-/* ── Responsive ── */
-@media (max-width: 768px) {
-  .header-top { padding: 12px 16px; }
-  .logo-text { font-size: 18px; }
-  .nav-bar { padding: 0 16px; }
-  .nav-item { padding: 10px 14px; font-size: 13px; }
-  .main { padding: 16px; }
-  .card { padding: 16px; }
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .form-row { grid-template-columns: 1fr; }
-  .modal { max-width: 100%; max-height: 95vh; border-radius: var(--radius-lg); }
-  .finance-summary { grid-template-columns: repeat(2, 1fr); }
-  .receipt-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
-}
-
-/* ── Scoreboard Highlight ── */
-.rank-1 td:first-child::before { content: '🥇 '; }
-.rank-2 td:first-child::before { content: '🥈 '; }
-.rank-3 td:first-child::before { content: '🥉 '; }
-
-/* ── Tabs inside pages ── */
-.tab-bar {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 20px;
-  border-bottom: 2px solid var(--sand-200);
-}
-
-.tab-item {
-  padding: 10px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-muted);
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
-  transition: all 0.2s;
-}
-
-.tab-item:hover { color: var(--text-primary); }
-.tab-item.active { color: var(--green-700); border-bottom-color: var(--green-700); font-weight: 600; }
-
-/* ── Member Avatar ── */
-.member-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--white);
-  flex-shrink: 0;
-}
-
-.member-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
 
 /* ── File upload area ── */
 .upload-area {
@@ -795,6 +652,118 @@ body.admin-mode .admin-only { display: inline-flex !important; }
   object-fit: contain;
 }
 
+/* ── Round Detail ── */
+.round-detail-row { cursor: pointer; }
+.round-detail-row:hover td { background: var(--green-100); }
+
+.round-score-list {
+  list-style: none;
+  padding: 0;
+}
+.round-score-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--sand-200);
+  font-size: 14px;
+}
+.round-score-list li:last-child { border-bottom: none; }
+.round-score-list .score-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  color: var(--green-700);
+}
+
+/* ── Checkbox list for round scoring ── */
+.score-entry-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.score-entry-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--sand-200);
+}
+
+.score-entry-item label {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.score-entry-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--green-600);
+}
+
+.score-entry-item input[type="number"] {
+  width: 80px;
+  padding: 6px 10px;
+  border: 1.5px solid var(--sand-300);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  text-align: center;
+}
+
+.score-entry-item input[type="number"]:focus {
+  outline: none;
+  border-color: var(--green-500);
+  box-shadow: 0 0 0 3px rgba(69,160,104,0.12);
+}
+
+/* ── Member Avatar ── */
+.member-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--white);
+  flex-shrink: 0;
+}
+
+.member-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ── Rank ── */
+.rank-1 td:first-child::before { content: '\1F947 '; }
+.rank-2 td:first-child::before { content: '\1F948 '; }
+.rank-3 td:first-child::before { content: '\1F949 '; }
+
+/* ── Tab bar inside pages ── */
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid var(--sand-200);
+}
+
+.tab-item {
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s;
+}
+
+.tab-item:hover { color: var(--text-primary); }
+.tab-item.active { color: var(--green-700); border-bottom-color: var(--green-700); font-weight: 600; }
+
 /* ── Toast ── */
 .toast {
   position: fixed;
@@ -814,87 +783,109 @@ body.admin-mode .admin-only { display: inline-flex !important; }
 }
 
 .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+/* ── Award entry rows in modal ── */
+.award-entry-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+.award-entry-row input {
+  padding: 8px 12px;
+  border: 1.5px solid var(--sand-300);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+.award-entry-row input:focus {
+  outline: none;
+  border-color: var(--green-500);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .header-top { padding: 12px 16px; }
+  .logo-text { font-size: 18px; }
+  .nav-bar { padding: 0 16px; }
+  .nav-item { padding: 10px 14px; font-size: 13px; }
+  .main { padding: 16px; }
+  .card { padding: 16px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .form-row { grid-template-columns: 1fr; }
+  .modal { max-width: 100%; max-height: 95vh; border-radius: var(--radius-lg); }
+  .finance-summary { grid-template-columns: repeat(2, 1fr); }
+  .finance-box-value { font-size: 18px; }
+}
 </style>
 </head>
 <body>
 
-<!-- ════════════ HEADER ════════════ -->
+<!-- HEADER -->
 <header class="header">
   <div class="header-top">
     <div class="logo">
-      <div class="logo-icon">⛳</div>
+      <div class="logo-icon">&#9971;</div>
       <div>
         <div class="logo-text">DS OB Golf Club</div>
-        <div class="logo-sub">EST. 2025 · MEMBER ONLY</div>
+        <div class="logo-sub">EST. 2025 &middot; MEMBER ONLY</div>
       </div>
     </div>
     <div class="admin-toggle">
       <button class="admin-btn" id="adminBtn" onclick="toggleAdmin()">
-        🔒 <span id="adminLabel">관리자</span>
+        &#128274; <span id="adminLabel">&#44288;&#47532;&#51088;</span>
       </button>
     </div>
   </div>
   <nav class="nav-bar" id="navBar">
-    <div class="nav-item active" data-page="dashboard">대시보드</div>
-    <div class="nav-item" data-page="members">멤버</div>
-    <div class="nav-item" data-page="rounds">라운드</div>
-    <div class="nav-item" data-page="finance">정산/회비</div>
-    <div class="nav-item" data-page="schedule">일정</div>
-    <div class="nav-item" data-page="awards">포상</div>
-    <div class="nav-item" data-page="receipts">영수증</div>
-    <div class="nav-item" data-page="bylaws">정관</div>
+    <div class="nav-item active" data-page="dashboard">&#45824;&#49884;&#48372;&#46300;</div>
+    <div class="nav-item" data-page="members">&#47716;&#48260;</div>
+    <div class="nav-item" data-page="rounds">&#46972;&#50868;&#46300;</div>
+    <div class="nav-item" data-page="finance">&#51221;&#49328;/&#54924;&#48708;</div>
+    <div class="nav-item" data-page="awards">&#54252;&#49345;</div>
+    <div class="nav-item" data-page="bylaws">&#51221;&#44288;</div>
+    <div class="nav-item" data-page="contacts">&#50672;&#46973;&#52376;</div>
   </nav>
 </header>
 
-<!-- ════════════ MAIN CONTENT ════════════ -->
+<!-- MAIN CONTENT -->
 <main class="main">
 
-  <!-- ── Dashboard ── -->
+  <!-- Dashboard -->
   <div class="page active" id="page-dashboard">
     <div class="stats-grid" id="dashStats"></div>
-    
     <div class="card">
       <div class="card-header">
         <div>
-          <div class="card-title">최근 라운드</div>
-          <div class="card-subtitle">최근 3경기 결과</div>
+          <div class="card-title">&#52572;&#44540; &#46972;&#50868;&#46300;</div>
+          <div class="card-subtitle">&#52572;&#44540; 3&#44221;&#44592; &#44208;&#44284;</div>
         </div>
       </div>
       <div class="table-wrap" id="dashRecentRounds"></div>
     </div>
-
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <div class="card-title">다가오는 일정</div>
-          <div class="card-subtitle">예정된 라운드 및 이벤트</div>
-        </div>
-      </div>
-      <div id="dashUpcoming"></div>
-    </div>
   </div>
 
-  <!-- ── Members ── -->
+  <!-- Members -->
   <div class="page" id="page-members">
     <div class="card">
       <div class="card-header">
         <div>
-          <div class="card-title">멤버 관리</div>
+          <div class="card-title">&#47716;&#48260; &#44288;&#47532;</div>
           <div class="card-subtitle" id="memberCount"></div>
         </div>
-        <button class="btn btn-primary admin-only" onclick="openMemberModal()">+ 멤버 추가</button>
+        <button class="btn btn-primary admin-only" onclick="openMemberModal()">+ &#47716;&#48260; &#52628;&#44032;</button>
       </div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>이름</th>
-              <th>핸디캡</th>
-              <th>가입일</th>
-              <th>참여</th>
-              <th>평균스코어</th>
-              <th>연락처</th>
-              <th class="admin-only">관리</th>
+              <th>&#51060;&#47492;</th>
+              <th>&#44396;&#48516;</th>
+              <th>&#54648;&#46356;&#52897;</th>
+              <th>&#46972;&#50868;&#46300;&#49688;</th>
+              <th>&#54217;&#44512;&#49828;&#53076;&#50612;</th>
+              <th class="admin-only-table">&#44288;&#47532;</th>
             </tr>
           </thead>
           <tbody id="memberTableBody"></tbody>
@@ -903,26 +894,26 @@ body.admin-mode .admin-only { display: inline-flex !important; }
     </div>
   </div>
 
-  <!-- ── Rounds ── -->
+  <!-- Rounds -->
   <div class="page" id="page-rounds">
     <div class="card">
       <div class="card-header">
         <div>
-          <div class="card-title">라운드 기록</div>
+          <div class="card-title">&#46972;&#50868;&#46300; &#44592;&#47197;</div>
           <div class="card-subtitle" id="roundCount"></div>
         </div>
-        <button class="btn btn-primary admin-only" onclick="openRoundModal()">+ 라운드 추가</button>
+        <button class="btn btn-primary admin-only" onclick="openRoundModal()">+ &#46972;&#50868;&#46300; &#52628;&#44032;</button>
       </div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>날짜</th>
-              <th>골프장</th>
-              <th>참가자</th>
-              <th>베스트</th>
-              <th>메모</th>
-              <th class="admin-only">관리</th>
+              <th>&#45216;&#51676;</th>
+              <th>&#52264;&#49688;</th>
+              <th>&#44264;&#54532;&#51109;</th>
+              <th>&#52280;&#44032;&#51064;&#50896;</th>
+              <th>&#48288;&#49828;&#53944;&#49828;&#53076;&#50612;</th>
+              <th class="admin-only-table">&#44288;&#47532;</th>
             </tr>
           </thead>
           <tbody id="roundTableBody"></tbody>
@@ -931,1153 +922,1146 @@ body.admin-mode .admin-only { display: inline-flex !important; }
     </div>
   </div>
 
-  <!-- ── Finance ── -->
+  <!-- Finance -->
   <div class="page" id="page-finance">
     <div class="finance-summary" id="financeSummary"></div>
-    
-    <div class="card">
+
+    <div class="card" style="margin-bottom:20px">
       <div class="card-header">
         <div>
-          <div class="card-title">수입/지출 내역</div>
-          <div class="card-subtitle">전체 거래 기록</div>
+          <div class="card-title">&#51077;&#44552; &#45236;&#50669;</div>
+          <div class="card-subtitle">&#49688;&#51077; &#44592;&#47197;</div>
         </div>
-        <button class="btn btn-primary admin-only" onclick="openFinanceModal()">+ 내역 추가</button>
+        <button class="btn btn-primary btn-sm admin-only" onclick="openDepositModal()">+ &#51077;&#44552; &#52628;&#44032;</button>
       </div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>날짜</th>
-              <th>구분</th>
-              <th>내용</th>
-              <th>금액</th>
-              <th>비고</th>
-              <th class="admin-only">관리</th>
+              <th>&#45216;&#51676;</th>
+              <th>&#45236;&#50857;</th>
+              <th>&#44552;&#50529;</th>
+              <th class="admin-only-table">&#44288;&#47532;</th>
             </tr>
           </thead>
-          <tbody id="financeTableBody"></tbody>
+          <tbody id="depositTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">&#51648;&#52636; &#45236;&#50669;</div>
+          <div class="card-subtitle">&#51648;&#52636; &#44592;&#47197;</div>
+        </div>
+        <button class="btn btn-primary btn-sm admin-only" onclick="openExpenseModal()">+ &#51648;&#52636; &#52628;&#44032;</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>&#45216;&#51676;</th>
+              <th>&#45236;&#50857;</th>
+              <th>&#44552;&#50529;</th>
+              <th>&#48708;&#44256;</th>
+              <th>&#50689;&#49688;&#51613;</th>
+              <th class="admin-only-table">&#44288;&#47532;</th>
+            </tr>
+          </thead>
+          <tbody id="expenseTableBody"></tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <!-- ── Schedule ── -->
-  <div class="page" id="page-schedule">
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <div class="card-title">일정 관리</div>
-          <div class="card-subtitle">라운드 일정 및 이벤트</div>
-        </div>
-        <button class="btn btn-primary admin-only" onclick="openScheduleModal()">+ 일정 추가</button>
-      </div>
-      <div class="timeline" id="scheduleTimeline"></div>
-    </div>
-  </div>
-
-  <!-- ── Awards ── -->
+  <!-- Awards -->
   <div class="page" id="page-awards">
     <div class="card">
       <div class="card-header">
         <div>
-          <div class="card-title">포상 내역</div>
-          <div class="card-subtitle">역대 수상 기록</div>
+          <div class="card-title">&#54252;&#49345; &#45236;&#50669;</div>
+          <div class="card-subtitle">&#50669;&#45824; &#49688;&#49345; &#44592;&#47197;</div>
         </div>
-        <button class="btn btn-primary admin-only" onclick="openAwardModal()">+ 포상 추가</button>
+        <button class="btn btn-primary admin-only" onclick="openAwardModal()">+ &#54252;&#49345; &#52628;&#44032;</button>
       </div>
-      <div class="awards-grid" id="awardsGrid"></div>
+      <div id="awardsContainer"></div>
     </div>
   </div>
 
-  <!-- ── Receipts ── -->
-  <div class="page" id="page-receipts">
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <div class="card-title">영수증 관리</div>
-          <div class="card-subtitle">지출 증빙 자료</div>
-        </div>
-        <button class="btn btn-primary admin-only" onclick="openReceiptModal()">+ 영수증 추가</button>
-      </div>
-      <div class="receipt-grid" id="receiptGrid"></div>
-    </div>
-  </div>
-
-  <!-- ── Bylaws ── -->
+  <!-- Bylaws -->
   <div class="page" id="page-bylaws">
     <div class="card">
       <div class="card-header">
         <div>
-          <div class="card-title">정관</div>
-          <div class="card-subtitle">DS OB Golf Club 운영 규정</div>
+          <div class="card-title">&#51221;&#44288;</div>
+          <div class="card-subtitle">DS OB Golf Club &#50868;&#50689; &#44508;&#51221;</div>
         </div>
-        <button class="btn btn-primary admin-only" onclick="openBylawsEditor()">✏️ 수정</button>
       </div>
       <div class="bylaws-content" id="bylawsContent"></div>
     </div>
   </div>
 
+  <!-- Contacts -->
+  <div class="page" id="page-contacts">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">&#50672;&#46973;&#52376;</div>
+          <div class="card-subtitle">&#54924;&#50896; &#50672;&#46973;&#52376; &#47785;&#47197;</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>&#49457;&#47749;</th>
+              <th>&#50672;&#46973;&#52376;</th>
+              <th>&#48708;&#44256;</th>
+              <th>25&#45380; &#54924;&#48708;</th>
+            </tr>
+          </thead>
+          <tbody id="contactsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
 </main>
 
-<!-- ════════════ MODALS ════════════ -->
+<!-- MODALS -->
 <div id="modalContainer"></div>
 <div id="lightboxContainer"></div>
 <div class="toast" id="toast"></div>
 
 <script>
-// ═══════════════════════════════════════════
+// =============================================
 // DS OB Golf Club Management Application
-// Data stored in-memory, exportable to JSON
-// ═══════════════════════════════════════════
+// =============================================
 
 const ADMIN_PASSWORD = 'dsob2025';
+const STORAGE_KEY = 'dsob_golf_data';
 let isAdmin = false;
 
-// ── Sample Data ──
-let DATA = {
-  members: [
-    { id: 1, name: '김영근', handicap: 18, joinDate: '2025-01', phone: '010-****-1234', rounds: 12, avgScore: 92, color: '#2d6147' },
-    { id: 2, name: '이준호', handicap: 22, joinDate: '2025-01', phone: '010-****-5678', rounds: 10, avgScore: 96, color: '#378056' },
-    { id: 3, name: '박성민', handicap: 15, joinDate: '2025-01', phone: '010-****-9012', rounds: 11, avgScore: 88, color: '#45a068' },
-    { id: 4, name: '정우진', handicap: 25, joinDate: '2025-02', phone: '010-****-3456', rounds: 8, avgScore: 100, color: '#6bc088' },
-    { id: 5, name: '최동현', handicap: 20, joinDate: '2025-02', phone: '010-****-7890', rounds: 9, avgScore: 94, color: '#c8a84e' },
-    { id: 6, name: '한지훈', handicap: 28, joinDate: '2025-03', phone: '010-****-2345', rounds: 7, avgScore: 102, color: '#d4b962' },
-    { id: 7, name: '윤서준', handicap: 16, joinDate: '2025-03', phone: '010-****-6789', rounds: 11, avgScore: 89, color: '#2d6147' },
-    { id: 8, name: '임재현', handicap: 24, joinDate: '2025-04', phone: '010-****-0123', rounds: 6, avgScore: 98, color: '#378056' },
-  ],
-  rounds: [
-    { id: 1, date: '2025-12-15', course: '남서울CC', scores: [{mid:1,score:88},{mid:2,score:94},{mid:3,score:85},{mid:5,score:92}], memo: '연말 정기 라운드', best: '박성민 (85)' },
-    { id: 2, date: '2025-11-17', course: '용인CC', scores: [{mid:1,score:90},{mid:3,score:86},{mid:4,score:102},{mid:7,score:87}], memo: '11월 정기 라운드', best: '박성민 (86)' },
-    { id: 3, date: '2025-10-20', course: '안양CC', scores: [{mid:2,score:95},{mid:5,score:91},{mid:6,score:104},{mid:8,score:97}], memo: '10월 정기 라운드', best: '최동현 (91)' },
-    { id: 4, date: '2026-01-19', course: '남서울CC', scores: [{mid:1,score:86},{mid:2,score:92},{mid:3,score:84},{mid:7,score:88}], memo: '신년 개막전', best: '박성민 (84)' },
-    { id: 5, date: '2026-02-16', course: '용인CC', scores: [{mid:1,score:90},{mid:4,score:99},{mid:5,score:93},{mid:6,score:101}], memo: '2월 정기 라운드', best: '김영근 (90)' },
-  ],
-  finance: [
-    { id: 1, date: '2025-01-05', type: 'income', desc: '2025 연회비 (8명)', amount: 2400000, note: '1인 30만원' },
-    { id: 2, date: '2025-03-15', type: 'expense', desc: '춘계 대회 상금', amount: 500000, note: '우승/준우승/3위' },
-    { id: 3, date: '2025-06-20', type: 'expense', desc: '골프 용품 공동구매', amount: 320000, note: '볼마커, 티 등' },
-    { id: 4, date: '2025-09-10', type: 'income', desc: '하반기 회비 추가', amount: 800000, note: '추가 모금' },
-    { id: 5, date: '2025-12-20', type: 'expense', desc: '연말 시상식 비용', amount: 450000, note: '식사 + 상품' },
-    { id: 6, date: '2026-01-10', type: 'income', desc: '2026 연회비 (8명)', amount: 2400000, note: '1인 30만원' },
-    { id: 7, date: '2026-02-15', type: 'expense', desc: '2월 라운드 보조비', amount: 200000, note: '그린피 보조' },
-  ],
-  schedule: [
-    { id: 1, date: '2026-03-16', title: '3월 정기 라운드', location: '안양CC', time: '07:00', participants: ['김영근','이준호','박성민','정우진'], note: '3월 정기 모임' },
-    { id: 2, date: '2026-04-20', title: '4월 정기 라운드', location: '남서울CC', time: '06:30', participants: ['전원 참석'], note: '춘계 대회 겸 진행' },
-    { id: 3, date: '2026-05-18', title: '5월 정기 라운드', location: '용인CC', time: '07:00', participants: [], note: '참가자 미정' },
-    { id: 4, date: '2026-06-15', title: '상반기 총회', location: 'TBD', time: '18:00', participants: ['전원 참석'], note: '회비 정산 및 하반기 일정 논의' },
-  ],
-  awards: [
-    { id: 1, icon: '🏆', title: '2025 연간 베스트스코어', winner: '박성민', detail: '84타 (남서울CC, 2026.01.19)', date: '2026-01' },
-    { id: 2, icon: '📈', title: '2025 최다향상상', winner: '정우진', detail: '핸디캡 30 → 25 (5타 감소)', date: '2025-12' },
-    { id: 3, icon: '🎯', title: '2025 니어핀상 (최다)', winner: '윤서준', detail: '연간 니어핀 7회', date: '2025-12' },
-    { id: 4, icon: '🏌️', title: '2025 개근상', winner: '김영근', detail: '연간 전 라운드 참석', date: '2025-12' },
-    { id: 5, icon: '⭐', title: '2025 매너상', winner: '한지훈', detail: '회원 투표 1위', date: '2025-12' },
-  ],
-  receipts: [
-    { id: 1, date: '2025-12-20', desc: '연말 시상식 식대', amount: 350000, image: '', note: '레스토랑 기류' },
-    { id: 2, date: '2025-12-20', desc: '시상식 상품 구매', amount: 100000, note: '골프 용품점', image: '' },
-    { id: 3, date: '2026-02-15', desc: '2월 그린피 보조', amount: 200000, note: '용인CC', image: '' },
-  ],
-  bylaws: `<h2>제1장 총칙</h2>
-<h3>제1조 (명칭)</h3>
-<p>본 모임은 "DS OB Golf Club"(이하 "모임")이라 칭한다.</p>
+// ── Member colors for avatars ──
+const COLORS = ['#2d6147','#378056','#45a068','#6bc088','#c8a84e','#d4b962','#1a3a2a','#234d38','#3b82f6','#d94452','#8b6914','#2563eb','#059669','#d97706','#7c3aed'];
 
-<h3>제2조 (목적)</h3>
-<p>모임은 회원 상호간의 친목 도모와 건전한 골프 문화 발전을 목적으로 한다.</p>
+function getColor(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+  return COLORS[Math.abs(h) % COLORS.length];
+}
 
-<h3>제3조 (소재지)</h3>
-<p>모임의 주된 활동지역은 수도권으로 한다.</p>
+// ── Default Data ──
+function getDefaultData() {
+  return {
+    members: [
+      { id: 1, name: '김영옥', type: '게스트', handicap: 23, rounds: 7, avgScore: 95.3 },
+      { id: 2, name: '김창진', type: '정회원', handicap: 25, rounds: 2, avgScore: 97 },
+      { id: 3, name: '박인혁', type: '정회원', handicap: 29, rounds: 7, avgScore: 101.1 },
+      { id: 4, name: '배현준', type: '정회원', handicap: 17, rounds: 8, avgScore: 89.4 },
+      { id: 5, name: '승용수', type: '정회원', handicap: 21, rounds: 8, avgScore: 93 },
+      { id: 6, name: '이강진', type: '정회원', handicap: 15, rounds: 7, avgScore: 86.7 },
+      { id: 7, name: '이성재', type: '정회원', handicap: 14, rounds: 7, avgScore: 85.7 },
+      { id: 8, name: '이재국', type: '정회원', handicap: 23, rounds: 1, avgScore: 95 },
+      { id: 9, name: '이지훈', type: '정회원', handicap: 17, rounds: 8, avgScore: 89 },
+      { id: 10, name: '이현재', type: '정회원', handicap: 31, rounds: 7, avgScore: 102.9 },
+      { id: 11, name: '장민구', type: '정회원', handicap: 21, rounds: 8, avgScore: 93.4 },
+      { id: 12, name: '전형건', type: '정회원', handicap: 22, rounds: 8, avgScore: 94.1 },
+      { id: 13, name: '최영근', type: '정회원', handicap: 18, rounds: 8, avgScore: 90.4 },
+      { id: 14, name: '윤준원', type: '정회원', handicap: null, rounds: 0, avgScore: null },
+      { id: 15, name: '최기성', type: '정회원', handicap: null, rounds: 0, avgScore: null },
+    ],
+    rounds: [
+      { id: 1, date: '2025-03-20', label: '25-1차', course: '태광', scores: [{name:'김영옥',score:89},{name:'배현준',score:89},{name:'승용수',score:87},{name:'이강진',score:88},{name:'이성재',score:88},{name:'이지훈',score:83},{name:'장민구',score:91},{name:'전형건',score:96},{name:'최영근',score:98},{name:'이현재',score:91}] },
+      { id: 2, date: '2025-04-17', label: '25-2차', course: '태광', scores: [{name:'이성재',score:87},{name:'최영근',score:87},{name:'장민구',score:92},{name:'이지훈',score:93},{name:'승용수',score:95},{name:'배현준',score:97},{name:'전형건',score:97},{name:'김영옥',score:98},{name:'이현재',score:106},{name:'박인혁',score:107}] },
+      { id: 3, date: '2025-05-15', label: '25-3차', course: '태광', scores: [{name:'이성재',score:80},{name:'최영근',score:84},{name:'장민구',score:100},{name:'이지훈',score:90},{name:'승용수',score:90},{name:'배현준',score:81},{name:'전형건',score:90},{name:'김영옥',score:95},{name:'이현재',score:104},{name:'박인혁',score:108},{name:'이강진',score:87}] },
+      { id: 4, date: '2025-06-19', label: '25-4차', course: '태광', scores: [{name:'이성재',score:81},{name:'최영근',score:89},{name:'장민구',score:94},{name:'이지훈',score:92},{name:'승용수',score:87},{name:'배현준',score:85},{name:'전형건',score:96},{name:'김영옥',score:94},{name:'이현재',score:107},{name:'박인혁',score:96},{name:'이강진',score:86},{name:'김창진',score:94}] },
+      { id: 5, date: '2025-08-21', label: '25-5차', course: '태광', scores: [{name:'이지훈',score:82},{name:'이강진',score:88},{name:'장민구',score:91},{name:'이성재',score:92},{name:'최영근',score:95},{name:'배현준',score:96},{name:'승용수',score:99},{name:'김영옥',score:99},{name:'전형건',score:103},{name:'박인혁',score:103}] },
+      { id: 6, date: '2025-09-18', label: '25-6차', course: '태광', scores: [{name:'이성재',score:83},{name:'이강진',score:85},{name:'배현준',score:88},{name:'최영근',score:91},{name:'김영옥',score:91},{name:'이지훈',score:92},{name:'전형건',score:92},{name:'승용수',score:93},{name:'장민구',score:97},{name:'박인혁',score:101},{name:'이현재',score:106}] },
+      { id: 7, date: '2025-10-15', label: '25-7차', course: '태광', scores: [{name:'이강진',score:83},{name:'장민구',score:86},{name:'배현준',score:88},{name:'최영근',score:88},{name:'전형건',score:89},{name:'이지훈',score:90},{name:'이재국',score:95},{name:'박인혁',score:96},{name:'승용수',score:97},{name:'이현재',score:107}] },
+      { id: 8, date: '2025-11-20', label: '25-8차', course: '태광', scores: [{name:'이성재',score:89},{name:'이지훈',score:90},{name:'이강진',score:90},{name:'전형건',score:90},{name:'배현준',score:91},{name:'최영근',score:91},{name:'장민구',score:96},{name:'승용수',score:96},{name:'박인혁',score:97},{name:'이현재',score:99},{name:'김창진',score:100},{name:'김영옥',score:101}] },
+    ],
+    deposits: [
+      { id: 1, date: '2025-01', desc: '회비 (13명 x 200만원)', amount: 26000000 },
+      { id: 2, date: '2025-04', desc: '이자', amount: 1644 },
+      { id: 3, date: '2025-04', desc: '김영옥(현금)', amount: 200000 },
+      { id: 4, date: '2025-04', desc: '김영옥법카', amount: 200000 },
+      { id: 5, date: '2025-05', desc: '이자', amount: 1491 },
+      { id: 6, date: '2025-05', desc: '김영옥법카', amount: 70000 },
+      { id: 7, date: '2025-05', desc: '스승의날행사', amount: 338900 },
+      { id: 8, date: '2025-06', desc: '이자', amount: 1290 },
+      { id: 9, date: '2025-08', desc: '이자', amount: 2308 },
+      { id: 10, date: '2025-09', desc: '이자', amount: 923 },
+      { id: 11, date: '2025-10', desc: '이자', amount: 893 },
+      { id: 12, date: '2025-11', desc: '이자', amount: 495 },
+    ],
+    expenses: [
+      { id: 1, date: '2025-03', desc: '점심+그늘집', amount: 517000, note: '', receipt: '' },
+      { id: 2, date: '2025-03', desc: '저녁', amount: 837000, note: '태광', receipt: '' },
+      { id: 3, date: '2025-03', desc: '프로샵', amount: 194000, note: '', receipt: '' },
+      { id: 4, date: '2025-04', desc: '최종현탈퇴', amount: 2000000, note: '', receipt: '' },
+      { id: 5, date: '2025-04', desc: '점심+그늘집', amount: 540000, note: '', receipt: '' },
+      { id: 6, date: '2025-04', desc: '프로샵', amount: 516000, note: '', receipt: '' },
+      { id: 7, date: '2025-04', desc: '저녁(농우)', amount: 1059000, note: '', receipt: '' },
+      { id: 8, date: '2025-05', desc: '지출소계', amount: 2875200, note: '프로샵 589700', receipt: '' },
+      { id: 9, date: '2025-06', desc: '점심+그늘집+프로샵', amount: 1441000, note: '프로샵 909000', receipt: '' },
+      { id: 10, date: '2025-06', desc: '저녁1차', amount: 1670000, note: '', receipt: '' },
+      { id: 11, date: '2025-06', desc: '저녁2차', amount: 105000, note: '', receipt: '' },
+      { id: 12, date: '2025-08', desc: '식사+프로샵', amount: 2360000, note: '', receipt: '' },
+      { id: 13, date: '2025-08', desc: '60만원지원', amount: 600000, note: '', receipt: '' },
+      { id: 14, date: '2025-08', desc: '프로샵 초과금액 개인지불', amount: -13000, note: '', receipt: '' },
+      { id: 15, date: '2025-08', desc: '김영옥회비', amount: -300000, note: '', receipt: '' },
+      { id: 16, date: '2025-09', desc: '식사+프로샵', amount: 2728000, note: '', receipt: '' },
+      { id: 17, date: '2025-09', desc: '60만원지원', amount: 600000, note: '', receipt: '' },
+      { id: 18, date: '2025-09', desc: '김영옥회비', amount: -250000, note: '', receipt: '' },
+      { id: 19, date: '2025-10', desc: '식사+프로샵', amount: 2841000, note: '', receipt: '' },
+      { id: 20, date: '2025-10', desc: '60만원지원', amount: 550000, note: '', receipt: '' },
+      { id: 21, date: '2025-11', desc: '식사+프로샵', amount: 3018000, note: '', receipt: '' },
+      { id: 22, date: '2025-11', desc: '180만원지원', amount: 1800000, note: '', receipt: '' },
+      { id: 23, date: '2025-11', desc: '김창진 그린피지원', amount: 130000, note: '', receipt: '' },
+    ],
+    awards: [
+      { id: 1, month: '3월', entries: [{category:'스코어1위',winner:'이지훈'},{category:'니어',winner:'승용수'},{category:'롱기',winner:'이강진'},{category:'버디1위',winner:'김영옥'}] },
+      { id: 2, month: '4월', entries: [{category:'스코어1위',winner:'최영근'},{category:'전월대비타수감소1위',winner:'승용수'}] },
+      { id: 3, month: '5월', entries: [{category:'스코어1위',winner:'이성재'},{category:'전월대비타수감소1위',winner:'배현준'}] },
+      { id: 4, month: '6월', entries: [{category:'스코어1위',winner:'이성재'},{category:'전월대비타수감소1위',winner:'박인혁'},{category:'라베',winner:'이강진/김창진/박인혁'},{category:'행운상',winner:'김창진'}] },
+      { id: 5, month: '8월', entries: [{category:'스코어1위',winner:'이지훈'},{category:'전월대비타수감소1위',winner:'장민구'},{category:'라베',winner:'이지훈'},{category:'행운상',winner:'최영근/승용수'}] },
+      { id: 6, month: '9월', entries: [{category:'스코어1위',winner:'이성재'},{category:'전월대비타수감소1위',winner:'김영옥'},{category:'라베',winner:'이강진'},{category:'행운상',winner:'최영근/전형건'}] },
+      { id: 7, month: '10월', entries: [{category:'스코어1위',winner:'이강진'},{category:'전월대비타수감소1위',winner:'장민구'},{category:'라베',winner:'이강진/장민구/전형건/이재국'},{category:'특별상',winner:'이재국'},{category:'행운상',winner:'최영근/윤준원'}] },
+      { id: 8, month: '연말', entries: [{category:'스코어1위',winner:'이성재'},{category:'전월대비타수감소1위',winner:'박인혁'},{category:'연평균1위',winner:'이성재'},{category:'연평균2위',winner:'이강진'},{category:'연평균3위',winner:'이지훈'},{category:'롱기',winner:'이강진'},{category:'니어',winner:'김창진'},{category:'특별상',winner:'김창진'},{category:'행운상',winner:'김영옥/장민구'}] },
+    ],
+    contacts: [
+      { id: 1, name: '김영옥', phone: '010-7399-8490', note: '게스트', fee: '법카' },
+      { id: 2, name: '김창진', phone: '010-8823-8550', note: '정회원', fee: 'O' },
+      { id: 3, name: '박인혁', phone: '010-7523-9195', note: '정회원', fee: 'O' },
+      { id: 4, name: '배현준', phone: '010-2845-6600', note: '정회원', fee: 'O' },
+      { id: 5, name: '승용수', phone: '010-7262-4746', note: '정회원', fee: 'O' },
+      { id: 6, name: '이강진', phone: '010-4079-8986', note: '정회원', fee: 'O' },
+      { id: 7, name: '이성재', phone: '010-4678-7661', note: '정회원', fee: 'O' },
+      { id: 8, name: '이재국', phone: '010-2094-4933', note: '정회원', fee: 'O' },
+      { id: 9, name: '이지훈', phone: '010-9887-1844', note: '정회원', fee: 'O' },
+      { id: 10, name: '이현재', phone: '010-6862-2927', note: '정회원', fee: 'O' },
+      { id: 11, name: '장민구', phone: '010-8793-9079', note: '정회원', fee: 'O' },
+      { id: 12, name: '전형건', phone: '010-8638-2142', note: '정회원', fee: 'O' },
+      { id: 13, name: '최영근', phone: '010-3264-7523', note: '정회원', fee: 'O' },
+    ],
+  };
+}
 
-<h2>제2장 회원</h2>
-<h3>제4조 (회원 자격)</h3>
-<p>회원은 기존 회원 2인 이상의 추천을 받아 총회의 승인을 거쳐 가입할 수 있다.</p>
+// ── Data Management ──
+let DATA;
 
-<h3>제5조 (회원의 권리와 의무)</h3>
-<ol>
-<li>회원은 모임의 모든 활동에 참여할 권리를 가진다.</li>
-<li>회원은 정해진 회비를 납부할 의무를 진다.</li>
-<li>회원은 모임의 정관 및 결의사항을 준수하여야 한다.</li>
-</ol>
+function loadData() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      DATA = JSON.parse(saved);
+      // Ensure all keys exist (for backward compat)
+      const def = getDefaultData();
+      if (!DATA.deposits) DATA.deposits = def.deposits;
+      if (!DATA.expenses) DATA.expenses = def.expenses;
+      if (!DATA.contacts) DATA.contacts = def.contacts;
+      if (!DATA.awards) DATA.awards = def.awards;
+      if (!DATA.rounds) DATA.rounds = def.rounds;
+      if (!DATA.members) DATA.members = def.members;
+    } else {
+      DATA = getDefaultData();
+      saveData();
+    }
+  } catch(e) {
+    DATA = getDefaultData();
+    saveData();
+  }
+}
 
-<h2>제3장 운영</h2>
-<h3>제6조 (정기 라운드)</h3>
-<p>정기 라운드는 매월 셋째 주 일요일을 원칙으로 하며, 사정에 따라 변경할 수 있다.</p>
+function saveData() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA));
+  } catch(e) {
+    showToast('저장 공간이 부족합니다');
+  }
+}
 
-<h3>제7조 (회비)</h3>
-<ol>
-<li>연회비는 1인 30만원으로 하며, 매년 1월에 납부한다.</li>
-<li>회비는 라운드 보조, 상금, 모임 운영비 등에 사용한다.</li>
-<li>회비 사용 내역은 분기별로 회원에게 공개한다.</li>
-</ol>
+function resetData() {
+  if (confirm('모든 데이터를 초기값으로 되돌리시겠습니까?')) {
+    DATA = getDefaultData();
+    saveData();
+    renderAll();
+    showToast('데이터가 초기화되었습니다');
+  }
+}
 
-<h3>제8조 (포상)</h3>
-<ol>
-<li>연간 시상 : 베스트스코어상, 최다향상상, 니어핀상, 개근상, 매너상</li>
-<li>시상은 연말 총회에서 진행한다.</li>
-</ol>
+// ── Next ID helper ──
+function nextId(arr) {
+  return arr.length > 0 ? Math.max(...arr.map(x => x.id)) + 1 : 1;
+}
 
-<h2>제4장 기타</h2>
-<h3>제9조 (정관 개정)</h3>
-<p>정관의 개정은 전체 회원 2/3 이상의 동의로 한다.</p>
-
-<h3>부칙</h3>
-<p>본 정관은 2025년 1월 1일부터 시행한다.</p>`
-};
-
-// ── Utility Functions ──
-const $ = id => document.getElementById(id);
-const qs = sel => document.querySelector(sel);
-const qsa = sel => document.querySelectorAll(sel);
-
+// ── Format helpers ──
 function fmt(n) {
-  return new Intl.NumberFormat('ko-KR').format(n);
+  if (n == null) return '-';
+  return Number(n).toLocaleString('ko-KR');
 }
 
-function fmtWon(n) {
-  return '₩' + fmt(n);
+function fmtDate(d) {
+  if (!d) return '-';
+  if (d.length <= 7) return d; // YYYY-MM format
+  const parts = d.split('-');
+  return parts[0] + '-' + parts[1] + '-' + parts[2];
 }
 
+// ── Toast ──
 function showToast(msg) {
-  const t = $('toast');
+  const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
 }
-
-function getMemberName(mid) {
-  const m = DATA.members.find(x => x.id === mid);
-  return m ? m.name : '(알 수 없음)';
-}
-
-function getMemberColor(mid) {
-  const m = DATA.members.find(x => x.id === mid);
-  return m ? m.color : '#999';
-}
-
-let nextId = (arr) => (arr.length ? Math.max(...arr.map(x => x.id)) + 1 : 1);
 
 // ── Admin Toggle ──
 function toggleAdmin() {
   if (isAdmin) {
     isAdmin = false;
     document.body.classList.remove('admin-mode');
-    $('adminBtn').classList.remove('active');
-    $('adminLabel').textContent = '관리자';
-    $('adminBtn').innerHTML = '🔒 <span id="adminLabel">관리자</span>';
+    document.getElementById('adminBtn').classList.remove('active');
+    document.getElementById('adminLabel').textContent = '관리자';
     showToast('관리자 모드를 종료했습니다');
-  } else {
-    showPasswordModal();
+    return;
   }
-}
-
-function showPasswordModal() {
-  $('modalContainer').innerHTML = `
+  // Show password modal
+  const mc = document.getElementById('modalContainer');
+  mc.innerHTML = `
     <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
-      <div class="modal" style="max-width:380px">
+      <div class="modal" style="max-width:400px">
         <div class="modal-header">
-          <div class="modal-title">🔐 관리자 인증</div>
-          <button class="btn-icon" onclick="closeModal()">✕</button>
+          <div class="modal-title">관리자 인증</div>
+          <button class="btn-icon" onclick="closeModal()">&times;</button>
         </div>
         <div class="modal-body">
-          <p style="color:var(--text-secondary);font-size:14px;margin-bottom:12px">관리자 비밀번호를 입력하세요</p>
+          <p style="font-size:14px;color:var(--text-secondary)">관리자 비밀번호를 입력하세요.</p>
           <div class="pw-input-wrap">
-            <input type="password" id="pwInput" placeholder="비밀번호" onkeydown="if(event.key==='Enter')checkPw()">
+            <input type="password" id="pwInput" placeholder="비밀번호" onkeyup="if(event.key==='Enter')checkPw()">
             <button class="btn btn-primary" onclick="checkPw()">확인</button>
           </div>
-          <div class="pw-error" id="pwError">비밀번호가 일치하지 않습니다</div>
+          <div class="pw-error" id="pwError">비밀번호가 올바르지 않습니다.</div>
         </div>
       </div>
-    </div>
-  `;
-  setTimeout(() => $('pwInput')?.focus(), 100);
+    </div>`;
+  setTimeout(() => document.getElementById('pwInput').focus(), 100);
 }
 
 function checkPw() {
-  const pw = $('pwInput').value;
+  const pw = document.getElementById('pwInput').value;
   if (pw === ADMIN_PASSWORD) {
     isAdmin = true;
     document.body.classList.add('admin-mode');
-    $('adminBtn').classList.add('active');
-    $('adminBtn').innerHTML = '🔓 <span id="adminLabel">관리자 ON</span>';
+    document.getElementById('adminBtn').classList.add('active');
+    document.getElementById('adminLabel').textContent = '관리자 ON';
     closeModal();
     showToast('관리자 모드가 활성화되었습니다');
-    renderCurrentPage();
   } else {
-    $('pwError').style.display = 'block';
-    $('pwInput').value = '';
-    $('pwInput').focus();
+    document.getElementById('pwError').style.display = 'block';
   }
 }
 
-function closeModal() { $('modalContainer').innerHTML = ''; }
+function closeModal() {
+  document.getElementById('modalContainer').innerHTML = '';
+}
+
+function closeLightbox() {
+  document.getElementById('lightboxContainer').innerHTML = '';
+}
+
+function openLightbox(src) {
+  document.getElementById('lightboxContainer').innerHTML = `
+    <div class="lightbox" onclick="closeLightbox()">
+      <img src="${src}" alt="확대 이미지">
+    </div>`;
+}
 
 // ── Navigation ──
-let currentPage = 'dashboard';
-
-document.addEventListener('DOMContentLoaded', () => {
-  qsa('.nav-item').forEach(nav => {
-    nav.addEventListener('click', () => {
-      const page = nav.dataset.page;
-      qsa('.nav-item').forEach(n => n.classList.remove('active'));
-      nav.classList.add('active');
-      qsa('.page').forEach(p => p.classList.remove('active'));
-      $('page-' + page).classList.add('active');
-      currentPage = page;
-      renderCurrentPage();
-    });
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    item.classList.add('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + item.dataset.page).classList.add('active');
   });
-  renderAll();
 });
 
-function renderCurrentPage() {
-  const renderers = {
-    dashboard: renderDashboard,
-    members: renderMembers,
-    rounds: renderRounds,
-    finance: renderFinance,
-    schedule: renderSchedule,
-    awards: renderAwards,
-    receipts: renderReceipts,
-    bylaws: renderBylaws,
-  };
-  renderers[currentPage]?.();
-}
+// ══════════════════════════════════════
+// RENDER FUNCTIONS
+// ══════════════════════════════════════
 
 function renderAll() {
   renderDashboard();
+  renderMembers();
+  renderRounds();
+  renderFinance();
+  renderAwards();
+  renderBylaws();
+  renderContacts();
 }
 
-// ══════════════════════
-// DASHBOARD
-// ══════════════════════
+// ── Dashboard ──
 function renderDashboard() {
-  const totalIncome = DATA.finance.filter(f=>f.type==='income').reduce((s,f)=>s+f.amount,0);
-  const totalExpense = DATA.finance.filter(f=>f.type==='expense').reduce((s,f)=>s+f.amount,0);
-  
-  $('dashStats').innerHTML = `
-    <div class="stat-card">
-      <div class="stat-icon members">👥</div>
-      <div><div class="stat-value">${DATA.members.length}</div><div class="stat-label">전체 멤버</div></div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon rounds">⛳</div>
-      <div><div class="stat-value">${DATA.rounds.length}</div><div class="stat-label">총 라운드</div></div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon finance">💰</div>
-      <div><div class="stat-value">${fmtWon(totalIncome - totalExpense)}</div><div class="stat-label">잔여 회비</div></div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon schedule">📅</div>
-      <div><div class="stat-value">${DATA.schedule.filter(s=>s.date>=new Date().toISOString().slice(0,10)).length}</div><div class="stat-label">예정 일정</div></div>
-    </div>
-  `;
+  const totalMembers = DATA.members.length;
+  const totalRounds = DATA.rounds.length;
+  const totalDeposits = DATA.deposits.reduce((s,d) => s + d.amount, 0);
+  const totalExpenses = DATA.expenses.reduce((s,e) => s + e.amount, 0);
+  const balance = totalDeposits - totalExpenses;
 
-  // Recent rounds
-  const recent = [...DATA.rounds].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,3);
-  if (recent.length) {
-    $('dashRecentRounds').innerHTML = `<table><thead><tr><th>날짜</th><th>골프장</th><th>베스트</th><th>참가</th></tr></thead><tbody>
-      ${recent.map(r=>`<tr>
-        <td style="font-family:'JetBrains Mono',monospace;font-size:13px">${r.date}</td>
-        <td>${r.course}</td>
-        <td><span class="badge badge-gold">${r.best}</span></td>
-        <td>${r.scores.length}명</td>
-      </tr>`).join('')}
-    </tbody></table>`;
-  } else {
-    $('dashRecentRounds').innerHTML = '<div class="empty-state"><div class="empty-state-icon">⛳</div><div class="empty-state-text">아직 라운드 기록이 없습니다</div></div>';
-  }
-
-  // Upcoming
-  const today = new Date().toISOString().slice(0,10);
-  const upcoming = DATA.schedule.filter(s=>s.date>=today).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3);
-  if (upcoming.length) {
-    $('dashUpcoming').innerHTML = upcoming.map(s => `
-      <div style="display:flex;align-items:center;gap:16px;padding:12px 0;border-bottom:1px solid var(--sand-200)">
-        <div style="min-width:56px;text-align:center">
-          <div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;color:var(--green-700)">${s.date.slice(8,10)}</div>
-          <div style="font-size:12px;color:var(--text-muted)">${s.date.slice(5,7)}월</div>
-        </div>
-        <div style="flex:1">
-          <div style="font-weight:600">${s.title}</div>
-          <div style="font-size:13px;color:var(--text-secondary)">${s.location} · ${s.time}</div>
-        </div>
-        <span class="badge badge-green">${s.participants.length ? s.participants.join(', ') : '미정'}</span>
+  document.getElementById('dashStats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-icon members">&#9971;</div>
+      <div>
+        <div class="stat-value">${totalMembers}</div>
+        <div class="stat-label">전체 멤버</div>
       </div>
-    `).join('');
-  } else {
-    $('dashUpcoming').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📅</div><div class="empty-state-text">예정된 일정이 없습니다</div></div>';
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon rounds">&#127948;</div>
+      <div>
+        <div class="stat-value">${totalRounds}</div>
+        <div class="stat-label">총 라운드</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon finance">&#128176;</div>
+      <div>
+        <div class="stat-value">${fmt(balance)}</div>
+        <div class="stat-label">잔여 회비</div>
+      </div>
+    </div>`;
+
+  // Recent 3 rounds
+  const sorted = [...DATA.rounds].sort((a,b) => b.date.localeCompare(a.date));
+  const recent = sorted.slice(0, 3);
+  if (recent.length === 0) {
+    document.getElementById('dashRecentRounds').innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#127948;</div><div class="empty-state-text">라운드 기록이 없습니다</div></div>';
+    return;
   }
+  let html = '<table><thead><tr><th>날짜</th><th>차수</th><th>골프장</th><th>참가</th><th>베스트</th></tr></thead><tbody>';
+  recent.forEach(r => {
+    const best = getBestScore(r);
+    html += `<tr><td>${fmtDate(r.date)}</td><td>${r.label||''}</td><td>${r.course}</td><td>${r.scores.length}명</td><td>${best}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('dashRecentRounds').innerHTML = html;
 }
 
-// ══════════════════════
-// MEMBERS
-// ══════════════════════
+function getBestScore(round) {
+  if (!round.scores || round.scores.length === 0) return '-';
+  const sorted = [...round.scores].sort((a,b) => a.score - b.score);
+  return sorted[0].name + ' (' + sorted[0].score + ')';
+}
+
+// ── Members ──
 function renderMembers() {
-  $('memberCount').textContent = `총 ${DATA.members.length}명`;
-  $('memberTableBody').innerHTML = DATA.members.map(m => `
-    <tr>
-      <td>
-        <div class="member-row">
-          <div class="member-avatar" style="background:${m.color}">${m.name.slice(0,1)}</div>
-          <span style="font-weight:600">${m.name}</span>
+  const tbody = document.getElementById('memberTableBody');
+  document.getElementById('memberCount').textContent = '총 ' + DATA.members.length + '명';
+
+  const sorted = [...DATA.members].sort((a,b) => a.name.localeCompare(b.name, 'ko'));
+  let html = '';
+  sorted.forEach(m => {
+    html += `<tr>
+      <td><div class="member-row"><div class="member-avatar" style="background:${getColor(m.name)}">${m.name.charAt(0)}</div>${m.name}</div></td>
+      <td><span class="badge ${m.type==='정회원'?'badge-green':'badge-gold'}">${m.type}</span></td>
+      <td style="font-family:'JetBrains Mono',monospace">${m.handicap != null ? m.handicap : '-'}</td>
+      <td>${m.rounds || 0}</td>
+      <td style="font-family:'JetBrains Mono',monospace">${m.avgScore != null ? m.avgScore : '-'}</td>
+      <td class="admin-only-table">
+        <div style="display:flex;gap:4px">
+          <button class="btn-icon" onclick="editMember(${m.id})" title="수정">&#9998;</button>
+          <button class="btn-icon" onclick="deleteMember(${m.id})" title="삭제" style="color:var(--red-500)">&#128465;</button>
         </div>
       </td>
-      <td><span class="badge badge-green">${m.handicap}</span></td>
-      <td style="font-size:13px;color:var(--text-muted)">${m.joinDate}</td>
-      <td style="font-family:'JetBrains Mono',monospace">${m.rounds}회</td>
-      <td style="font-family:'JetBrains Mono',monospace;font-weight:500">${m.avgScore}</td>
-      <td style="font-size:13px">${m.phone}</td>
-      <td class="admin-only">
-        <button class="btn-icon" onclick="editMember(${m.id})" title="수정">✏️</button>
-        <button class="btn-icon" onclick="deleteMember(${m.id})" title="삭제">🗑️</button>
-      </td>
-    </tr>
-  `).join('');
+    </tr>`;
+  });
+  tbody.innerHTML = html;
 }
 
-function openMemberModal(member = null) {
-  const isEdit = !!member;
-  const m = member || { name:'', handicap:'', phone:'', joinDate: new Date().toISOString().slice(0,7), rounds:0, avgScore:0 };
-  $('modalContainer').innerHTML = `
+function openMemberModal(editId) {
+  const m = editId ? DATA.members.find(x => x.id === editId) : null;
+  const mc = document.getElementById('modalContainer');
+  mc.innerHTML = `
     <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
       <div class="modal">
         <div class="modal-header">
-          <div class="modal-title">${isEdit ? '멤버 수정' : '멤버 추가'}</div>
-          <button class="btn-icon" onclick="closeModal()">✕</button>
+          <div class="modal-title">${m ? '멤버 수정' : '멤버 추가'}</div>
+          <button class="btn-icon" onclick="closeModal()">&times;</button>
         </div>
         <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">이름</label>
+            <input class="form-input" id="mName" value="${m ? m.name : ''}">
+          </div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">이름 *</label>
-              <input class="form-input" id="mName" value="${m.name}" placeholder="홍길동">
+              <label class="form-label">구분</label>
+              <select class="form-select" id="mType">
+                <option value="정회원" ${m && m.type==='정회원'?'selected':''}>정회원</option>
+                <option value="게스트" ${m && m.type==='게스트'?'selected':''}>게스트</option>
+              </select>
             </div>
             <div class="form-group">
               <label class="form-label">핸디캡</label>
-              <input class="form-input" id="mHandicap" type="number" value="${m.handicap}" placeholder="18">
+              <input class="form-input" type="number" id="mHandicap" value="${m && m.handicap != null ? m.handicap : ''}">
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">가입일</label>
-              <input class="form-input" id="mJoinDate" type="month" value="${m.joinDate}">
+              <label class="form-label">라운드수</label>
+              <input class="form-input" type="number" id="mRounds" value="${m ? m.rounds || 0 : 0}">
             </div>
             <div class="form-group">
-              <label class="form-label">연락처</label>
-              <input class="form-input" id="mPhone" value="${m.phone}" placeholder="010-****-1234">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">라운드 수</label>
-              <input class="form-input" id="mRounds" type="number" value="${m.rounds}">
-            </div>
-            <div class="form-group">
-              <label class="form-label">평균 스코어</label>
-              <input class="form-input" id="mAvgScore" type="number" value="${m.avgScore}">
+              <label class="form-label">평균스코어</label>
+              <input class="form-input" type="number" step="0.1" id="mAvg" value="${m && m.avgScore != null ? m.avgScore : ''}">
             </div>
           </div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" onclick="closeModal()">취소</button>
-          <button class="btn btn-primary" onclick="saveMember(${isEdit ? m.id : 'null'})">${isEdit ? '수정' : '추가'}</button>
+          <button class="btn btn-primary" onclick="saveMember(${editId||0})">${m ? '수정' : '추가'}</button>
         </div>
       </div>
-    </div>
-  `;
+    </div>`;
 }
 
-function saveMember(id) {
-  const name = $('mName').value.trim();
+function saveMember(editId) {
+  const name = document.getElementById('mName').value.trim();
   if (!name) { showToast('이름을 입력하세요'); return; }
-  
-  const colors = ['#2d6147','#378056','#45a068','#6bc088','#c8a84e','#d4b962','#3b82f6','#6366f1'];
-  const data = {
-    name,
-    handicap: parseInt($('mHandicap').value) || 0,
-    joinDate: $('mJoinDate').value,
-    phone: $('mPhone').value,
-    rounds: parseInt($('mRounds').value) || 0,
-    avgScore: parseInt($('mAvgScore').value) || 0,
-    color: colors[Math.floor(Math.random()*colors.length)]
-  };
+  const type = document.getElementById('mType').value;
+  const hcVal = document.getElementById('mHandicap').value;
+  const handicap = hcVal !== '' ? parseInt(hcVal) : null;
+  const rounds = parseInt(document.getElementById('mRounds').value) || 0;
+  const avgVal = document.getElementById('mAvg').value;
+  const avgScore = avgVal !== '' ? parseFloat(avgVal) : null;
 
-  if (id) {
-    const idx = DATA.members.findIndex(m => m.id === id);
-    DATA.members[idx] = { ...DATA.members[idx], ...data };
-    showToast('멤버 정보가 수정되었습니다');
+  if (editId) {
+    const m = DATA.members.find(x => x.id === editId);
+    if (m) { m.name = name; m.type = type; m.handicap = handicap; m.rounds = rounds; m.avgScore = avgScore; }
   } else {
-    data.id = nextId(DATA.members);
-    DATA.members.push(data);
-    showToast('새 멤버가 추가되었습니다');
+    DATA.members.push({ id: nextId(DATA.members), name, type, handicap, rounds, avgScore });
   }
+  saveData();
+  renderAll();
   closeModal();
-  renderMembers();
+  showToast(editId ? '멤버가 수정되었습니다' : '멤버가 추가되었습니다');
 }
 
-function editMember(id) {
-  openMemberModal(DATA.members.find(m => m.id === id));
-}
+function editMember(id) { openMemberModal(id); }
 
 function deleteMember(id) {
   const m = DATA.members.find(x => x.id === id);
-  if (confirm(`${m.name} 멤버를 삭제하시겠습니까?`)) {
+  if (m && confirm(m.name + ' 멤버를 삭제하시겠습니까?')) {
     DATA.members = DATA.members.filter(x => x.id !== id);
+    saveData();
+    renderAll();
     showToast('멤버가 삭제되었습니다');
-    renderMembers();
   }
 }
 
-// ══════════════════════
-// ROUNDS
-// ══════════════════════
+// ── Rounds ──
 function renderRounds() {
+  const tbody = document.getElementById('roundTableBody');
+  document.getElementById('roundCount').textContent = '총 ' + DATA.rounds.length + '회';
+
   const sorted = [...DATA.rounds].sort((a,b) => b.date.localeCompare(a.date));
-  $('roundCount').textContent = `총 ${sorted.length}회`;
-  $('roundTableBody').innerHTML = sorted.map(r => `
-    <tr>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:13px">${r.date}</td>
-      <td style="font-weight:500">${r.course}</td>
-      <td>
-        ${r.scores.map(s => `<span class="badge badge-green" style="margin:2px">${getMemberName(s.mid)} ${s.score}</span>`).join(' ')}
+  let html = '';
+  sorted.forEach(r => {
+    const best = getBestScore(r);
+    html += `<tr class="round-detail-row" onclick="showRoundDetail(${r.id})">
+      <td>${fmtDate(r.date)}</td>
+      <td>${r.label||''}</td>
+      <td>${r.course}</td>
+      <td>${r.scores.length}명</td>
+      <td style="font-family:'JetBrains Mono',monospace">${best}</td>
+      <td class="admin-only-table" onclick="event.stopPropagation()">
+        <div style="display:flex;gap:4px">
+          <button class="btn-icon" onclick="editRound(${r.id})" title="수정">&#9998;</button>
+          <button class="btn-icon" onclick="deleteRound(${r.id})" title="삭제" style="color:var(--red-500)">&#128465;</button>
+        </div>
       </td>
-      <td><span class="badge badge-gold">${r.best}</span></td>
-      <td style="font-size:13px;color:var(--text-secondary)">${r.memo || '-'}</td>
-      <td class="admin-only">
-        <button class="btn-icon" onclick="editRound(${r.id})" title="수정">✏️</button>
-        <button class="btn-icon" onclick="deleteRound(${r.id})" title="삭제">🗑️</button>
-      </td>
-    </tr>
-  `).join('');
+    </tr>`;
+  });
+  tbody.innerHTML = html;
 }
 
-function openRoundModal(round = null) {
-  const isEdit = !!round;
-  const r = round || { date: '', course: '', memo: '', scores: [] };
-  const scoresHtml = r.scores.length 
-    ? r.scores.map((s,i) => scoreRowHtml(i, s.mid, s.score)).join('') 
-    : scoreRowHtml(0, '', '');
-
-  $('modalContainer').innerHTML = `
-    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
-      <div class="modal">
-        <div class="modal-header">
-          <div class="modal-title">${isEdit ? '라운드 수정' : '라운드 추가'}</div>
-          <button class="btn-icon" onclick="closeModal()">✕</button>
-        </div>
-        <div class="modal-body">
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">날짜 *</label>
-              <input class="form-input" id="rDate" type="date" value="${r.date}">
-            </div>
-            <div class="form-group">
-              <label class="form-label">골프장 *</label>
-              <input class="form-input" id="rCourse" value="${r.course}" placeholder="남서울CC">
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">메모</label>
-            <input class="form-input" id="rMemo" value="${r.memo}" placeholder="라운드 메모">
-          </div>
-          <div class="form-group">
-            <label class="form-label">스코어</label>
-            <div id="scoreRows">${scoresHtml}</div>
-            <button class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="addScoreRow()">+ 참가자 추가</button>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" onclick="closeModal()">취소</button>
-          <button class="btn btn-primary" onclick="saveRound(${isEdit ? r.id : 'null'})">${isEdit ? '수정' : '추가'}</button>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function scoreRowHtml(idx, mid, score) {
-  const options = DATA.members.map(m => `<option value="${m.id}" ${m.id==mid?'selected':''}>${m.name}</option>`).join('');
-  return `<div class="form-row" style="margin-bottom:8px" data-scorerow>
-    <div><select class="form-select score-member">${options}</select></div>
-    <div><input class="form-input score-value" type="number" value="${score}" placeholder="스코어"></div>
-  </div>`;
-}
-
-function addScoreRow() {
-  const container = $('scoreRows');
-  const div = document.createElement('div');
-  div.innerHTML = scoreRowHtml(container.children.length, '', '');
-  container.appendChild(div.firstElementChild);
-}
-
-function saveRound(id) {
-  const date = $('rDate').value;
-  const course = $('rCourse').value.trim();
-  if (!date || !course) { showToast('날짜와 골프장을 입력하세요'); return; }
-
-  const rows = qsa('[data-scorerow]');
-  const scores = [];
-  rows.forEach(row => {
-    const mid = parseInt(row.querySelector('.score-member').value);
-    const score = parseInt(row.querySelector('.score-value').value);
-    if (mid && score) scores.push({ mid, score });
+function showRoundDetail(id) {
+  const r = DATA.rounds.find(x => x.id === id);
+  if (!r) return;
+  const sorted = [...r.scores].sort((a,b) => a.score - b.score);
+  let listHtml = '';
+  sorted.forEach((s, i) => {
+    let rankIcon = '';
+    if (i === 0) rankIcon = '&#129351; ';
+    else if (i === 1) rankIcon = '&#129352; ';
+    else if (i === 2) rankIcon = '&#129353; ';
+    listHtml += `<li><span>${rankIcon}${s.name}</span><span class="score-val">${s.score}</span></li>`;
   });
 
-  let best = '-';
-  if (scores.length) {
-    const bestScore = scores.reduce((a,b) => a.score < b.score ? a : b);
-    best = `${getMemberName(bestScore.mid)} (${bestScore.score})`;
-  }
-
-  const data = { date, course, memo: $('rMemo').value, scores, best };
-  
-  if (id) {
-    const idx = DATA.rounds.findIndex(r => r.id === id);
-    DATA.rounds[idx] = { ...DATA.rounds[idx], ...data };
-    showToast('라운드가 수정되었습니다');
-  } else {
-    data.id = nextId(DATA.rounds);
-    DATA.rounds.push(data);
-    showToast('라운드가 추가되었습니다');
-  }
-  closeModal();
-  renderRounds();
-}
-
-function editRound(id) { openRoundModal(DATA.rounds.find(r => r.id === id)); }
-function deleteRound(id) {
-  if (confirm('이 라운드를 삭제하시겠습니까?')) {
-    DATA.rounds = DATA.rounds.filter(r => r.id !== id);
-    showToast('라운드가 삭제되었습니다');
-    renderRounds();
-  }
-}
-
-// ══════════════════════
-// FINANCE
-// ══════════════════════
-function renderFinance() {
-  const income = DATA.finance.filter(f=>f.type==='income').reduce((s,f)=>s+f.amount,0);
-  const expense = DATA.finance.filter(f=>f.type==='expense').reduce((s,f)=>s+f.amount,0);
-  
-  $('financeSummary').innerHTML = `
-    <div class="finance-box"><div class="finance-box-label">총 수입</div><div class="finance-box-value income">${fmtWon(income)}</div></div>
-    <div class="finance-box"><div class="finance-box-label">총 지출</div><div class="finance-box-value expense">${fmtWon(expense)}</div></div>
-    <div class="finance-box"><div class="finance-box-label">잔액</div><div class="finance-box-value balance">${fmtWon(income-expense)}</div></div>
-  `;
-
-  const sorted = [...DATA.finance].sort((a,b) => b.date.localeCompare(a.date));
-  $('financeTableBody').innerHTML = sorted.map(f => `
-    <tr>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:13px">${f.date}</td>
-      <td><span class="badge ${f.type==='income'?'badge-green':'badge-red'}">${f.type==='income'?'수입':'지출'}</span></td>
-      <td style="font-weight:500">${f.desc}</td>
-      <td style="font-family:'JetBrains Mono',monospace;font-weight:500;color:${f.type==='income'?'var(--green-700)':'var(--red-500)'}">${f.type==='income'?'+':'-'}${fmtWon(f.amount)}</td>
-      <td style="font-size:13px;color:var(--text-secondary)">${f.note || '-'}</td>
-      <td class="admin-only">
-        <button class="btn-icon" onclick="editFinance(${f.id})" title="수정">✏️</button>
-        <button class="btn-icon" onclick="deleteFinance(${f.id})" title="삭제">🗑️</button>
-      </td>
-    </tr>
-  `).join('');
-}
-
-function openFinanceModal(finance = null) {
-  const isEdit = !!finance;
-  const f = finance || { date: '', type: 'income', desc: '', amount: '', note: '' };
-  $('modalContainer').innerHTML = `
+  const mc = document.getElementById('modalContainer');
+  mc.innerHTML = `
     <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
       <div class="modal">
         <div class="modal-header">
-          <div class="modal-title">${isEdit ? '내역 수정' : '내역 추가'}</div>
-          <button class="btn-icon" onclick="closeModal()">✕</button>
+          <div class="modal-title">${r.label || fmtDate(r.date)} - ${r.course}</div>
+          <button class="btn-icon" onclick="closeModal()">&times;</button>
         </div>
         <div class="modal-body">
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">날짜 *</label>
-              <input class="form-input" id="fDate" type="date" value="${f.date}">
-            </div>
-            <div class="form-group">
-              <label class="form-label">구분 *</label>
-              <select class="form-select" id="fType">
-                <option value="income" ${f.type==='income'?'selected':''}>수입</option>
-                <option value="expense" ${f.type==='expense'?'selected':''}>지출</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">내용 *</label>
-            <input class="form-input" id="fDesc" value="${f.desc}" placeholder="내용">
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">금액 (원) *</label>
-              <input class="form-input" id="fAmount" type="number" value="${f.amount}" placeholder="300000">
-            </div>
-            <div class="form-group">
-              <label class="form-label">비고</label>
-              <input class="form-input" id="fNote" value="${f.note || ''}" placeholder="메모">
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" onclick="closeModal()">취소</button>
-          <button class="btn btn-primary" onclick="saveFinance(${isEdit ? f.id : 'null'})">${isEdit ? '수정' : '추가'}</button>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">${fmtDate(r.date)} | ${r.scores.length}명 참가</p>
+          <ul class="round-score-list">${listHtml}</ul>
         </div>
       </div>
-    </div>
-  `;
+    </div>`;
 }
 
-function saveFinance(id) {
-  const date = $('fDate').value;
-  const desc = $('fDesc').value.trim();
-  const amount = parseInt($('fAmount').value);
-  if (!date || !desc || !amount) { showToast('필수 항목을 입력하세요'); return; }
+function openRoundModal(editId) {
+  const r = editId ? DATA.rounds.find(x => x.id === editId) : null;
+  const members = [...DATA.members].sort((a,b) => a.name.localeCompare(b.name, 'ko'));
 
-  const data = { date, type: $('fType').value, desc, amount, note: $('fNote').value };
-  if (id) {
-    const idx = DATA.finance.findIndex(f => f.id === id);
-    DATA.finance[idx] = { ...DATA.finance[idx], ...data };
-    showToast('내역이 수정되었습니다');
-  } else {
-    data.id = nextId(DATA.finance);
-    DATA.finance.push(data);
-    showToast('내역이 추가되었습니다');
-  }
-  closeModal();
-  renderFinance();
-}
+  let scoreEntries = '';
+  members.forEach(m => {
+    const existing = r ? r.scores.find(s => s.name === m.name) : null;
+    scoreEntries += `
+      <div class="score-entry-item">
+        <input type="checkbox" id="chk_${m.id}" ${existing ? 'checked' : ''} onchange="toggleScoreInput(${m.id})">
+        <label for="chk_${m.id}">${m.name}</label>
+        <input type="number" id="score_${m.id}" placeholder="스코어" value="${existing ? existing.score : ''}" ${existing ? '' : 'disabled'} data-name="${m.name}">
+      </div>`;
+  });
 
-function editFinance(id) { openFinanceModal(DATA.finance.find(f => f.id === id)); }
-function deleteFinance(id) {
-  if (confirm('이 내역을 삭제하시겠습니까?')) {
-    DATA.finance = DATA.finance.filter(f => f.id !== id);
-    showToast('내역이 삭제되었습니다');
-    renderFinance();
-  }
-}
-
-// ══════════════════════
-// SCHEDULE
-// ══════════════════════
-function renderSchedule() {
-  const today = new Date().toISOString().slice(0,10);
-  const sorted = [...DATA.schedule].sort((a,b) => a.date.localeCompare(b.date));
-  
-  if (!sorted.length) {
-    $('scheduleTimeline').innerHTML = '<div class="empty-state"><div class="empty-state-icon">📅</div><div class="empty-state-text">등록된 일정이 없습니다</div></div>';
-    return;
-  }
-
-  $('scheduleTimeline').innerHTML = sorted.map(s => {
-    const isPast = s.date < today;
-    const isUpcoming = s.date >= today;
-    return `
-      <div class="timeline-item ${isPast?'past':''} ${isUpcoming?'upcoming':''}">
-        <div style="display:flex;justify-content:space-between;align-items:start">
-          <div>
-            <div class="timeline-date">${s.date} (${s.time})</div>
-            <div class="timeline-title">${s.title}</div>
-            <div class="timeline-detail">📍 ${s.location}</div>
-            ${s.note ? `<div class="timeline-detail">${s.note}</div>` : ''}
-          </div>
-          <div class="admin-only" style="display:flex;gap:4px">
-            <button class="btn-icon" onclick="editSchedule(${s.id})">✏️</button>
-            <button class="btn-icon" onclick="deleteSchedule(${s.id})">🗑️</button>
-          </div>
-        </div>
-        ${s.participants.length ? `<div class="timeline-participants">${s.participants.map(p=>`<span class="badge badge-green">${p}</span>`).join('')}</div>` : ''}
-      </div>
-    `;
-  }).join('');
-}
-
-function openScheduleModal(schedule = null) {
-  const isEdit = !!schedule;
-  const s = schedule || { date:'', title:'', location:'', time:'07:00', participants:[], note:'' };
-  $('modalContainer').innerHTML = `
+  const mc = document.getElementById('modalContainer');
+  mc.innerHTML = `
     <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
-      <div class="modal">
+      <div class="modal modal-lg">
         <div class="modal-header">
-          <div class="modal-title">${isEdit ? '일정 수정' : '일정 추가'}</div>
-          <button class="btn-icon" onclick="closeModal()">✕</button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label class="form-label">제목 *</label>
-            <input class="form-input" id="sTitle" value="${s.title}" placeholder="3월 정기 라운드">
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">날짜 *</label>
-              <input class="form-input" id="sDate" type="date" value="${s.date}">
-            </div>
-            <div class="form-group">
-              <label class="form-label">시간</label>
-              <input class="form-input" id="sTime" type="time" value="${s.time}">
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">장소</label>
-            <input class="form-input" id="sLocation" value="${s.location}" placeholder="골프장 이름">
-          </div>
-          <div class="form-group">
-            <label class="form-label">참가자 (쉼표 구분)</label>
-            <input class="form-input" id="sParticipants" value="${s.participants.join(', ')}" placeholder="김영근, 이준호, ...">
-          </div>
-          <div class="form-group">
-            <label class="form-label">메모</label>
-            <input class="form-input" id="sNote" value="${s.note}" placeholder="추가 정보">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" onclick="closeModal()">취소</button>
-          <button class="btn btn-primary" onclick="saveSchedule(${isEdit ? s.id : 'null'})">${isEdit ? '수정' : '추가'}</button>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function saveSchedule(id) {
-  const title = $('sTitle').value.trim();
-  const date = $('sDate').value;
-  if (!title || !date) { showToast('제목과 날짜를 입력하세요'); return; }
-
-  const data = {
-    title, date,
-    time: $('sTime').value,
-    location: $('sLocation').value,
-    participants: $('sParticipants').value.split(',').map(s=>s.trim()).filter(Boolean),
-    note: $('sNote').value
-  };
-
-  if (id) {
-    const idx = DATA.schedule.findIndex(s => s.id === id);
-    DATA.schedule[idx] = { ...DATA.schedule[idx], ...data };
-    showToast('일정이 수정되었습니다');
-  } else {
-    data.id = nextId(DATA.schedule);
-    DATA.schedule.push(data);
-    showToast('일정이 추가되었습니다');
-  }
-  closeModal();
-  renderSchedule();
-}
-
-function editSchedule(id) { openScheduleModal(DATA.schedule.find(s => s.id === id)); }
-function deleteSchedule(id) {
-  if (confirm('이 일정을 삭제하시겠습니까?')) {
-    DATA.schedule = DATA.schedule.filter(s => s.id !== id);
-    showToast('일정이 삭제되었습니다');
-    renderSchedule();
-  }
-}
-
-// ══════════════════════
-// AWARDS
-// ══════════════════════
-function renderAwards() {
-  if (!DATA.awards.length) {
-    $('awardsGrid').innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏆</div><div class="empty-state-text">아직 포상 내역이 없습니다</div></div>';
-    return;
-  }
-  $('awardsGrid').innerHTML = DATA.awards.map(a => `
-    <div class="award-card">
-      <div class="award-icon">${a.icon}</div>
-      <div class="award-title">${a.title}</div>
-      <div class="award-winner">${a.winner}</div>
-      <div class="award-detail">${a.detail}</div>
-      <div class="admin-only" style="margin-top:10px;display:flex;gap:4px">
-        <button class="btn btn-secondary btn-sm" onclick="editAward(${a.id})">수정</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteAward(${a.id})">삭제</button>
-      </div>
-    </div>
-  `).join('');
-}
-
-function openAwardModal(award = null) {
-  const isEdit = !!award;
-  const a = award || { icon:'🏆', title:'', winner:'', detail:'', date:'' };
-  $('modalContainer').innerHTML = `
-    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
-      <div class="modal">
-        <div class="modal-header">
-          <div class="modal-title">${isEdit ? '포상 수정' : '포상 추가'}</div>
-          <button class="btn-icon" onclick="closeModal()">✕</button>
+          <div class="modal-title">${r ? '라운드 수정' : '라운드 추가'}</div>
+          <button class="btn-icon" onclick="closeModal()">&times;</button>
         </div>
         <div class="modal-body">
           <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">아이콘 (이모지)</label>
-              <input class="form-input" id="aIcon" value="${a.icon}" placeholder="🏆">
-            </div>
             <div class="form-group">
               <label class="form-label">날짜</label>
-              <input class="form-input" id="aDate" type="month" value="${a.date}">
+              <input class="form-input" type="date" id="rDate" value="${r ? r.date : ''}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">차수</label>
+              <input class="form-input" id="rLabel" placeholder="예: 25-9차" value="${r ? r.label || '' : ''}">
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">포상명 *</label>
-            <input class="form-input" id="aTitle" value="${a.title}" placeholder="연간 베스트스코어">
+            <label class="form-label">골프장</label>
+            <input class="form-input" id="rCourse" value="${r ? r.course : '태광'}">
           </div>
           <div class="form-group">
-            <label class="form-label">수상자 *</label>
-            <input class="form-input" id="aWinner" value="${a.winner}" placeholder="이름">
-          </div>
-          <div class="form-group">
-            <label class="form-label">상세</label>
-            <input class="form-input" id="aDetail" value="${a.detail}" placeholder="84타 (남서울CC)">
+            <label class="form-label">참가자 및 스코어</label>
+            <div class="score-entry-list">${scoreEntries}</div>
           </div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" onclick="closeModal()">취소</button>
-          <button class="btn btn-primary" onclick="saveAward(${isEdit ? a.id : 'null'})">${isEdit ? '수정' : '추가'}</button>
+          <button class="btn btn-primary" onclick="saveRound(${editId||0})">저장</button>
         </div>
       </div>
-    </div>
-  `;
+    </div>`;
 }
 
-function saveAward(id) {
-  const title = $('aTitle').value.trim();
-  const winner = $('aWinner').value.trim();
-  if (!title || !winner) { showToast('포상명과 수상자를 입력하세요'); return; }
+function toggleScoreInput(mid) {
+  const chk = document.getElementById('chk_' + mid);
+  const inp = document.getElementById('score_' + mid);
+  inp.disabled = !chk.checked;
+  if (!chk.checked) inp.value = '';
+  if (chk.checked) inp.focus();
+}
 
-  const data = { icon: $('aIcon').value || '🏆', title, winner, detail: $('aDetail').value, date: $('aDate').value };
-  if (id) {
-    const idx = DATA.awards.findIndex(a => a.id === id);
-    DATA.awards[idx] = { ...DATA.awards[idx], ...data };
-    showToast('포상이 수정되었습니다');
+function saveRound(editId) {
+  const date = document.getElementById('rDate').value;
+  const label = document.getElementById('rLabel').value.trim();
+  const course = document.getElementById('rCourse').value.trim();
+  if (!date || !course) { showToast('날짜와 골프장을 입력하세요'); return; }
+
+  const scores = [];
+  DATA.members.forEach(m => {
+    const chk = document.getElementById('chk_' + m.id);
+    const inp = document.getElementById('score_' + m.id);
+    if (chk && chk.checked && inp.value) {
+      scores.push({ name: m.name, score: parseInt(inp.value) });
+    }
+  });
+
+  if (scores.length === 0) { showToast('최소 1명의 스코어를 입력하세요'); return; }
+
+  if (editId) {
+    const r = DATA.rounds.find(x => x.id === editId);
+    if (r) { r.date = date; r.label = label; r.course = course; r.scores = scores; }
   } else {
-    data.id = nextId(DATA.awards);
-    DATA.awards.push(data);
-    showToast('포상이 추가되었습니다');
+    DATA.rounds.push({ id: nextId(DATA.rounds), date, label, course, scores });
   }
+  saveData();
+  renderAll();
   closeModal();
-  renderAwards();
+  showToast(editId ? '라운드가 수정되었습니다' : '라운드가 추가되었습니다');
 }
 
-function editAward(id) { openAwardModal(DATA.awards.find(a => a.id === id)); }
-function deleteAward(id) {
-  if (confirm('이 포상을 삭제하시겠습니까?')) {
-    DATA.awards = DATA.awards.filter(a => a.id !== id);
-    showToast('포상이 삭제되었습니다');
-    renderAwards();
+function editRound(id) { openRoundModal(id); }
+
+function deleteRound(id) {
+  const r = DATA.rounds.find(x => x.id === id);
+  if (r && confirm((r.label || fmtDate(r.date)) + ' 라운드를 삭제하시겠습니까?')) {
+    DATA.rounds = DATA.rounds.filter(x => x.id !== id);
+    saveData();
+    renderAll();
+    showToast('라운드가 삭제되었습니다');
   }
 }
 
-// ══════════════════════
-// RECEIPTS
-// ══════════════════════
-function renderReceipts() {
-  if (!DATA.receipts.length) {
-    $('receiptGrid').innerHTML = '<div class="empty-state"><div class="empty-state-icon">🧾</div><div class="empty-state-text">등록된 영수증이 없습니다</div></div>';
-    return;
-  }
-  $('receiptGrid').innerHTML = DATA.receipts.map(r => `
-    <div class="receipt-card">
-      ${r.image 
-        ? `<img class="receipt-img" src="${r.image}" onclick="openLightbox('${r.image}')" alt="영수증">`
-        : `<div class="receipt-img" style="display:flex;align-items:center;justify-content:center;font-size:36px;color:var(--text-muted)">🧾</div>`
-      }
-      <div class="receipt-info">
-        <div class="receipt-date">${r.date}</div>
-        <div class="receipt-desc">${r.desc}</div>
-        <div class="receipt-amount">${fmtWon(r.amount)}</div>
-        ${r.note ? `<div style="font-size:12px;color:var(--text-muted);margin-top:2px">${r.note}</div>` : ''}
-        <div class="admin-only" style="margin-top:8px;display:flex;gap:4px">
-          <button class="btn btn-secondary btn-sm" onclick="editReceipt(${r.id})">수정</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteReceipt(${r.id})">삭제</button>
-        </div>
-      </div>
+// ── Finance ──
+function renderFinance() {
+  const totalDeposits = DATA.deposits.reduce((s,d) => s + d.amount, 0);
+  const totalExpenses = DATA.expenses.reduce((s,e) => s + e.amount, 0);
+  const balance = totalDeposits - totalExpenses;
+
+  document.getElementById('financeSummary').innerHTML = `
+    <div class="finance-box">
+      <div class="finance-box-label">총 수입</div>
+      <div class="finance-box-value income">${fmt(totalDeposits)}</div>
     </div>
-  `).join('');
+    <div class="finance-box">
+      <div class="finance-box-label">총 지출</div>
+      <div class="finance-box-value expense">${fmt(totalExpenses)}</div>
+    </div>
+    <div class="finance-box">
+      <div class="finance-box-label">잔액</div>
+      <div class="finance-box-value balance">${fmt(balance)}</div>
+    </div>
+    ${isAdmin ? '<div class="finance-box" style="cursor:pointer" onclick="resetData()"><div class="finance-box-label">관리</div><div class="finance-box-value" style="font-size:16px;color:var(--red-500)">데이터 초기화</div></div>' : ''}
+  `;
+
+  // Deposits table
+  const dtbody = document.getElementById('depositTableBody');
+  let dhtml = '';
+  [...DATA.deposits].sort((a,b) => (a.date||'').localeCompare(b.date||'')).forEach(d => {
+    dhtml += `<tr>
+      <td>${d.date}</td>
+      <td>${d.desc}</td>
+      <td style="font-family:'JetBrains Mono',monospace;color:var(--green-700)">${fmt(d.amount)}</td>
+      <td class="admin-only-table">
+        <div style="display:flex;gap:4px">
+          <button class="btn-icon" onclick="editDeposit(${d.id})" title="수정">&#9998;</button>
+          <button class="btn-icon" onclick="deleteDeposit(${d.id})" title="삭제" style="color:var(--red-500)">&#128465;</button>
+        </div>
+      </td>
+    </tr>`;
+  });
+  dtbody.innerHTML = dhtml;
+
+  // Expenses table
+  const etbody = document.getElementById('expenseTableBody');
+  let ehtml = '';
+  [...DATA.expenses].sort((a,b) => (a.date||'').localeCompare(b.date||'')).forEach(e => {
+    const color = e.amount < 0 ? 'var(--green-700)' : 'var(--red-500)';
+    const receiptHtml = e.receipt ? `<img src="${e.receipt}" class="receipt-thumb" onclick="event.stopPropagation();openLightbox('${e.receipt.replace(/'/g,"\\'")}')" alt="영수증">` : '-';
+    ehtml += `<tr>
+      <td>${e.date}</td>
+      <td>${e.desc}</td>
+      <td style="font-family:'JetBrains Mono',monospace;color:${color}">${fmt(e.amount)}</td>
+      <td>${e.note || ''}</td>
+      <td>${receiptHtml}</td>
+      <td class="admin-only-table">
+        <div style="display:flex;gap:4px">
+          <button class="btn-icon" onclick="editExpense(${e.id})" title="수정">&#9998;</button>
+          <button class="btn-icon" onclick="deleteExpense(${e.id})" title="삭제" style="color:var(--red-500)">&#128465;</button>
+        </div>
+      </td>
+    </tr>`;
+  });
+  etbody.innerHTML = ehtml;
 }
 
-function openReceiptModal(receipt = null) {
-  const isEdit = !!receipt;
-  const r = receipt || { date:'', desc:'', amount:'', note:'', image:'' };
-  $('modalContainer').innerHTML = `
+function openDepositModal(editId) {
+  const d = editId ? DATA.deposits.find(x => x.id === editId) : null;
+  const mc = document.getElementById('modalContainer');
+  mc.innerHTML = `
     <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
       <div class="modal">
         <div class="modal-header">
-          <div class="modal-title">${isEdit ? '영수증 수정' : '영수증 추가'}</div>
-          <button class="btn-icon" onclick="closeModal()">✕</button>
+          <div class="modal-title">${d ? '입금 수정' : '입금 추가'}</div>
+          <button class="btn-icon" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">날짜</label>
+            <input class="form-input" id="dDate" value="${d ? d.date : ''}" placeholder="예: 2025-04">
+          </div>
+          <div class="form-group">
+            <label class="form-label">내용</label>
+            <input class="form-input" id="dDesc" value="${d ? d.desc : ''}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">금액</label>
+            <input class="form-input" type="number" id="dAmount" value="${d ? d.amount : ''}">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal()">취소</button>
+          <button class="btn btn-primary" onclick="saveDeposit(${editId||0})">${d ? '수정' : '추가'}</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function saveDeposit(editId) {
+  const date = document.getElementById('dDate').value.trim();
+  const desc = document.getElementById('dDesc').value.trim();
+  const amount = parseInt(document.getElementById('dAmount').value);
+  if (!date || !desc || isNaN(amount)) { showToast('모든 항목을 입력하세요'); return; }
+
+  if (editId) {
+    const d = DATA.deposits.find(x => x.id === editId);
+    if (d) { d.date = date; d.desc = desc; d.amount = amount; }
+  } else {
+    DATA.deposits.push({ id: nextId(DATA.deposits), date, desc, amount });
+  }
+  saveData();
+  renderAll();
+  closeModal();
+  showToast(editId ? '입금 내역이 수정되었습니다' : '입금 내역이 추가되었습니다');
+}
+
+function editDeposit(id) { openDepositModal(id); }
+function deleteDeposit(id) {
+  if (confirm('이 입금 내역을 삭제하시겠습니까?')) {
+    DATA.deposits = DATA.deposits.filter(x => x.id !== id);
+    saveData(); renderAll();
+    showToast('입금 내역이 삭제되었습니다');
+  }
+}
+
+// ── Receipt file handling ──
+let pendingReceipt = '';
+
+function openExpenseModal(editId) {
+  const e = editId ? DATA.expenses.find(x => x.id === editId) : null;
+  pendingReceipt = e ? (e.receipt || '') : '';
+  const mc = document.getElementById('modalContainer');
+  mc.innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">${e ? '지출 수정' : '지출 추가'}</div>
+          <button class="btn-icon" onclick="closeModal()">&times;</button>
         </div>
         <div class="modal-body">
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">날짜 *</label>
-              <input class="form-input" id="rcDate" type="date" value="${r.date}">
+              <label class="form-label">날짜</label>
+              <input class="form-input" id="eDate" value="${e ? e.date : ''}" placeholder="예: 2025-03">
             </div>
             <div class="form-group">
-              <label class="form-label">금액 (원) *</label>
-              <input class="form-input" id="rcAmount" type="number" value="${r.amount}">
+              <label class="form-label">금액</label>
+              <input class="form-input" type="number" id="eAmount" value="${e ? e.amount : ''}">
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">내용 *</label>
-            <input class="form-input" id="rcDesc" value="${r.desc}" placeholder="지출 내용">
+            <label class="form-label">내용</label>
+            <input class="form-input" id="eDesc" value="${e ? e.desc : ''}">
           </div>
           <div class="form-group">
             <label class="form-label">비고</label>
-            <input class="form-input" id="rcNote" value="${r.note || ''}" placeholder="메모">
+            <input class="form-input" id="eNote" value="${e ? e.note || '' : ''}">
           </div>
           <div class="form-group">
             <label class="form-label">영수증 이미지</label>
-            <div class="upload-area" onclick="document.getElementById('rcFile').click()">
-              <div class="upload-area-icon">📷</div>
-              <div class="upload-area-text">클릭하여 이미지를 선택하세요</div>
-              <input type="file" id="rcFile" accept="image/*" style="display:none" onchange="previewReceipt(event)">
+            <div class="upload-area" onclick="document.getElementById('receiptFile').click()">
+              <div class="upload-area-icon">&#128247;</div>
+              <div class="upload-area-text">클릭하여 영수증 이미지를 업로드하세요</div>
+              <input type="file" id="receiptFile" accept="image/*" style="display:none" onchange="handleReceiptUpload(event)">
             </div>
-            <img id="rcPreview" class="upload-preview" style="display:none;width:100%;margin-top:12px">
+            ${pendingReceipt ? `<img src="${pendingReceipt}" class="upload-preview" id="receiptPreview">` : '<img class="upload-preview" id="receiptPreview" style="display:none">'}
           </div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" onclick="closeModal()">취소</button>
-          <button class="btn btn-primary" onclick="saveReceipt(${isEdit ? r.id : 'null'})">${isEdit ? '수정' : '추가'}</button>
+          <button class="btn btn-primary" onclick="saveExpense(${editId||0})">${e ? '수정' : '추가'}</button>
         </div>
       </div>
-    </div>
-  `;
-  if (r.image) {
-    $('rcPreview').src = r.image;
-    $('rcPreview').style.display = 'block';
-  }
+    </div>`;
 }
 
-let pendingReceiptImage = '';
-
-function previewReceipt(event) {
+function handleReceiptUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = e => {
-    pendingReceiptImage = e.target.result;
-    $('rcPreview').src = pendingReceiptImage;
-    $('rcPreview').style.display = 'block';
+  reader.onload = function(e) {
+    pendingReceipt = e.target.result;
+    const prev = document.getElementById('receiptPreview');
+    if (prev) { prev.src = pendingReceipt; prev.style.display = 'block'; }
   };
   reader.readAsDataURL(file);
 }
 
-function saveReceipt(id) {
-  const date = $('rcDate').value;
-  const desc = $('rcDesc').value.trim();
-  const amount = parseInt($('rcAmount').value);
-  if (!date || !desc || !amount) { showToast('필수 항목을 입력하세요'); return; }
+function saveExpense(editId) {
+  const date = document.getElementById('eDate').value.trim();
+  const desc = document.getElementById('eDesc').value.trim();
+  const amount = parseInt(document.getElementById('eAmount').value);
+  const note = document.getElementById('eNote').value.trim();
+  if (!date || !desc || isNaN(amount)) { showToast('모든 항목을 입력하세요'); return; }
 
-  const data = { date, desc, amount, note: $('rcNote').value, image: pendingReceiptImage || (id ? DATA.receipts.find(r=>r.id===id)?.image : '') || '' };
-  if (id) {
-    const idx = DATA.receipts.findIndex(r => r.id === id);
-    DATA.receipts[idx] = { ...DATA.receipts[idx], ...data };
-    showToast('영수증이 수정되었습니다');
+  if (editId) {
+    const e = DATA.expenses.find(x => x.id === editId);
+    if (e) { e.date = date; e.desc = desc; e.amount = amount; e.note = note; e.receipt = pendingReceipt; }
   } else {
-    data.id = nextId(DATA.receipts);
-    DATA.receipts.push(data);
-    showToast('영수증이 추가되었습니다');
+    DATA.expenses.push({ id: nextId(DATA.expenses), date, desc, amount, note, receipt: pendingReceipt });
   }
-  pendingReceiptImage = '';
+  pendingReceipt = '';
+  saveData();
+  renderAll();
   closeModal();
-  renderReceipts();
+  showToast(editId ? '지출 내역이 수정되었습니다' : '지출 내역이 추가되었습니다');
 }
 
-function editReceipt(id) { pendingReceiptImage = ''; openReceiptModal(DATA.receipts.find(r => r.id === id)); }
-function deleteReceipt(id) {
-  if (confirm('이 영수증을 삭제하시겠습니까?')) {
-    DATA.receipts = DATA.receipts.filter(r => r.id !== id);
-    showToast('영수증이 삭제되었습니다');
-    renderReceipts();
+function editExpense(id) { openExpenseModal(id); }
+function deleteExpense(id) {
+  if (confirm('이 지출 내역을 삭제하시겠습니까?')) {
+    DATA.expenses = DATA.expenses.filter(x => x.id !== id);
+    saveData(); renderAll();
+    showToast('지출 내역이 삭제되었습니다');
   }
 }
 
-function openLightbox(src) {
-  $('lightboxContainer').innerHTML = `<div class="lightbox" onclick="closeLightbox()"><img src="${src}"></div>`;
+// ── Awards ──
+function renderAwards() {
+  const container = document.getElementById('awardsContainer');
+  if (!DATA.awards || DATA.awards.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#127942;</div><div class="empty-state-text">포상 내역이 없습니다</div></div>';
+    return;
+  }
+
+  // Define order for months
+  const monthOrder = ['3월','4월','5월','6월','7월','8월','9월','10월','11월','12월','연말'];
+  const sorted = [...DATA.awards].sort((a,b) => {
+    let ai = monthOrder.indexOf(a.month);
+    let bi = monthOrder.indexOf(b.month);
+    if (ai === -1) ai = 99;
+    if (bi === -1) bi = 99;
+    return ai - bi;
+  });
+
+  let html = '';
+  sorted.forEach(aw => {
+    html += `<div class="awards-month-section">
+      <div class="awards-month-title">${aw.month} ${isAdmin ? '<button class="btn btn-sm btn-secondary" style="margin-left:12px;font-size:12px" onclick="editAward('+aw.id+')">수정</button> <button class="btn btn-sm btn-danger" style="font-size:12px" onclick="deleteAward('+aw.id+')">삭제</button>' : ''}</div>
+      <div class="awards-grid">`;
+
+    const icons = {'스코어1위':'&#127942;','전월대비타수감소1위':'&#128200;','니어':'&#127919;','롱기':'&#128165;','버디1위':'&#128038;','라베':'&#129351;','행운상':'&#127808;','특별상':'&#11088;','연평균1위':'&#127942;','연평균2위':'&#129352;','연평균3위':'&#129353;'};
+
+    aw.entries.forEach(e => {
+      const icon = icons[e.category] || '&#127942;';
+      html += `<div class="award-card">
+        <div class="award-icon">${icon}</div>
+        <div class="award-title">${e.category}</div>
+        <div class="award-winner">${e.winner}</div>
+      </div>`;
+    });
+    html += '</div></div>';
+  });
+  container.innerHTML = html;
 }
 
-function closeLightbox() { $('lightboxContainer').innerHTML = ''; }
+function openAwardModal(editId) {
+  const aw = editId ? DATA.awards.find(x => x.id === editId) : null;
+  let entriesHtml = '';
+  if (aw) {
+    aw.entries.forEach((e, i) => {
+      entriesHtml += `<div class="award-entry-row" data-idx="${i}">
+        <input placeholder="부문" value="${e.category}" class="aw-cat">
+        <input placeholder="수상자" value="${e.winner}" class="aw-win">
+      </div>`;
+    });
+  } else {
+    entriesHtml = `<div class="award-entry-row" data-idx="0">
+      <input placeholder="부문 (예: 스코어1위)" class="aw-cat">
+      <input placeholder="수상자" class="aw-win">
+    </div>`;
+  }
 
-// ══════════════════════
-// BYLAWS
-// ══════════════════════
-function renderBylaws() {
-  $('bylawsContent').innerHTML = DATA.bylaws;
-}
-
-function openBylawsEditor() {
-  $('modalContainer').innerHTML = `
+  const mc = document.getElementById('modalContainer');
+  mc.innerHTML = `
     <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
-      <div class="modal" style="max-width:700px">
+      <div class="modal">
         <div class="modal-header">
-          <div class="modal-title">정관 수정</div>
-          <button class="btn-icon" onclick="closeModal()">✕</button>
+          <div class="modal-title">${aw ? '포상 수정' : '포상 추가'}</div>
+          <button class="btn-icon" onclick="closeModal()">&times;</button>
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label class="form-label">정관 내용 (HTML)</label>
-            <textarea class="form-textarea" id="bylawsEdit" style="min-height:400px;font-family:'JetBrains Mono',monospace;font-size:13px">${DATA.bylaws}</textarea>
+            <label class="form-label">월 / 시기</label>
+            <input class="form-input" id="awMonth" value="${aw ? aw.month : ''}" placeholder="예: 3월, 연말">
+          </div>
+          <div class="form-group">
+            <label class="form-label">포상 항목</label>
+            <div id="awardEntries">${entriesHtml}</div>
+            <button class="btn btn-sm btn-secondary" style="margin-top:8px" onclick="addAwardEntry()">+ 항목 추가</button>
           </div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" onclick="closeModal()">취소</button>
-          <button class="btn btn-primary" onclick="saveBylaws()">저장</button>
+          <button class="btn btn-primary" onclick="saveAward(${editId||0})">저장</button>
         </div>
       </div>
-    </div>
+    </div>`;
+}
+
+function addAwardEntry() {
+  const container = document.getElementById('awardEntries');
+  const idx = container.children.length;
+  const div = document.createElement('div');
+  div.className = 'award-entry-row';
+  div.dataset.idx = idx;
+  div.innerHTML = '<input placeholder="부문" class="aw-cat"><input placeholder="수상자" class="aw-win">';
+  container.appendChild(div);
+}
+
+function saveAward(editId) {
+  const month = document.getElementById('awMonth').value.trim();
+  if (!month) { showToast('월/시기를 입력하세요'); return; }
+
+  const cats = document.querySelectorAll('.aw-cat');
+  const wins = document.querySelectorAll('.aw-win');
+  const entries = [];
+  for (let i = 0; i < cats.length; i++) {
+    const c = cats[i].value.trim();
+    const w = wins[i].value.trim();
+    if (c && w) entries.push({ category: c, winner: w });
+  }
+  if (entries.length === 0) { showToast('최소 1개 포상 항목을 입력하세요'); return; }
+
+  if (editId) {
+    const aw = DATA.awards.find(x => x.id === editId);
+    if (aw) { aw.month = month; aw.entries = entries; }
+  } else {
+    DATA.awards.push({ id: nextId(DATA.awards), month, entries });
+  }
+  saveData();
+  renderAll();
+  closeModal();
+  showToast(editId ? '포상이 수정되었습니다' : '포상이 추가되었습니다');
+}
+
+function editAward(id) { openAwardModal(id); }
+function deleteAward(id) {
+  if (confirm('이 포상 내역을 삭제하시겠습니까?')) {
+    DATA.awards = DATA.awards.filter(x => x.id !== id);
+    saveData(); renderAll();
+    showToast('포상 내역이 삭제되었습니다');
+  }
+}
+
+// ── Bylaws ──
+function renderBylaws() {
+  document.getElementById('bylawsContent').innerHTML = `
+    <div class="bylaws-account">회비 통장: 3333328414362 카카오뱅크 최영근</div>
+
+    <h2>제1장 총칙</h2>
+
+    <h3>제1조 (명칭)</h3>
+    <p>본 모임은 "DS OB 골프클럽"(이하 "본 클럽")이라 한다.</p>
+
+    <h3>제2조 (목적)</h3>
+    <p>본 클럽은 회원 상호 간의 친목을 도모하고 골프를 통한 건강증진 및 여가선용을 목적으로 한다.</p>
+
+    <h3>제3조 (사업)</h3>
+    <p>본 클럽은 제2조의 목적을 달성하기 위해 다음 각 호의 사업을 수행한다.</p>
+    <ol>
+      <li>정기 골프 모임 개최(태광CC, 매월 3번째 목요일 2부티)</li>
+      <li>회원 간 친목 도모를 위한 각종 회식 개최</li>
+      <li>주요 회칙
+        <ul>
+          <li>계좌가 0원이 되더라도 즐겁게 라운딩을 한다</li>
+          <li>OB와 생크가 나더라도 즐겁게 라운딩을 한다</li>
+          <li>초대회장의 말에 복종한다</li>
+        </ul>
+      </li>
+    </ol>
+
+    <h2>제2장 회원</h2>
+
+    <h3>제4조 (회원의 자격)</h3>
+    <p>본 클럽의 회원은 DS 자산운용 출신이거나, 지인이어야 한다. 가입 신청 후 운영위원회의 승인을 받아야 한다.</p>
+
+    <h3>제5조 (회원의 권리와 의무)</h3>
+    <ol>
+      <li>회원은 총회에 참석하여 의결권을 행사할 수 있다.</li>
+      <li>회원은 본 클럽이 주최하는 각종 행사에 참여할 수 있다.</li>
+      <li>회원은 회비를 납부할 의무가 있다.</li>
+      <li>연간 회비는 인당 200만원으로 한다.</li>
+    </ol>
+
+    <h3>제6조 (회원의 탈퇴 및 제명)</h3>
+    <ol>
+      <li>회원은 자유의사에 따라 탈퇴할 수 있다.</li>
+      <li>회원이 본 클럽의 명예를 훼손하거나 의무를 이행하지 않을 경우, 운영위원회의 의결을 거쳐 제명할 수 있다.</li>
+    </ol>
+
+    <h2>제3장 임원</h2>
+
+    <h3>제7조 (임원의 구성)</h3>
+    <p>본 클럽은 다음의 임원을 둔다.</p>
+    <ol>
+      <li>회장 1명</li>
+      <li>총무 1명</li>
+      <li>서기 1명</li>
+      <li>운영위원 3명</li>
+    </ol>
+
+    <h3>제8조 (임원의 선출)</h3>
+    <p>임원은 총회에서 선출한다. 임기는 1년으로 하며 연임할 수 있다.</p>
+    <p>초대 회장 이성재, 초대 총무 최영근, 초대 서기 전형건, 운영위원 : 배현준, 이지훈, 승용수</p>
+    <p>회장의 선출은 당해년도 평균타수 상위 랭커 4명이 당해 마지막 월례회 회장타이틀 조에 편성되어 그 조 우승자로 결정한다</p>
+
+    <h3>제9조 (임원의 직무)</h3>
+    <ol>
+      <li>회장은 본 클럽을 대표하고 클럽의 업무를 총괄한다.</li>
+      <li>총무는 클럽의 재정 및 행정 업무를 담당한다.</li>
+      <li>서기는 회원의 스코어 기록을 책임진다</li>
+    </ol>
+
+    <h2>제4장 재정</h2>
+
+    <h3>제10조 (재정)</h3>
+    <p>본 클럽의 재정은 다음의 수입으로 충당한다.</p>
+    <ol>
+      <li>회원의 회비</li>
+      <li>찬조금 및 기부금</li>
+      <li>기타 수입</li>
+    </ol>
   `;
 }
 
-function saveBylaws() {
-  DATA.bylaws = $('bylawsEdit').value;
-  closeModal();
-  renderBylaws();
-  showToast('정관이 수정되었습니다');
+// ── Contacts ──
+function renderContacts() {
+  const tbody = document.getElementById('contactsTableBody');
+  let html = '';
+  DATA.contacts.forEach((c, i) => {
+    html += `<tr>
+      <td>${i + 1}</td>
+      <td><div class="member-row"><div class="member-avatar" style="background:${getColor(c.name)}">${c.name.charAt(0)}</div>${c.name}</div></td>
+      <td style="font-family:'JetBrains Mono',monospace">${c.phone}</td>
+      <td><span class="badge ${c.note==='정회원'?'badge-green':'badge-gold'}">${c.note}</span></td>
+      <td>${c.fee}</td>
+    </tr>`;
+  });
+  tbody.innerHTML = html;
 }
 
-// ══════════════════════
-// DATA EXPORT / IMPORT
-// ══════════════════════
-// For GitHub JSON workflow, these helper functions let you export/import data
-
-function exportData() {
-  const blob = new Blob([JSON.stringify(DATA, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `dsob-golf-data-${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('데이터가 내보내기 되었습니다');
-}
-
-function importData() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
-  input.onchange = e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = evt => {
-      try {
-        const imported = JSON.parse(evt.target.result);
-        DATA = imported;
-        renderCurrentPage();
-        showToast('데이터를 가져왔습니다');
-      } catch(err) {
-        showToast('올바른 JSON 파일이 아닙니다');
-      }
-    };
-    reader.readAsText(file);
-  };
-  input.click();
-}
-
-// Add export/import buttons to admin mode
-const origToggle = toggleAdmin;
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+loadData();
+renderAll();
 </script>
 </body>
 </html>
