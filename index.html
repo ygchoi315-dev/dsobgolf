@@ -1042,7 +1042,7 @@ body.admin-mode .admin-only-table { display: table-cell !important; }
 
 const ADMIN_PASSWORD = 'dsob2025';
 const STORAGE_KEY = 'dsob_golf_data';
-const DATA_VERSION = 5;
+const DATA_VERSION = 6;
 let isAdmin = false;
 
 // ── Member colors for avatars ──
@@ -1250,10 +1250,18 @@ function renderAll() {
 // ── Dashboard ──
 function renderDashboard() {
   const totalMembers = DATA.members.length;
-  const totalRounds = DATA.rounds.length;
   const totalDeposits = DATA.deposits.reduce((s,d) => s + d.amount, 0);
   const totalExpenses = DATA.expenses.reduce((s,e) => s + e.amount, 0);
   const balance = totalDeposits - totalExpenses;
+
+  // 최근 월 챔피언 (가장 최근 라운드의 베스트 스코어)
+  const sortedRounds = [...DATA.rounds].sort((a,b) => b.date.localeCompare(a.date));
+  let champText = '-';
+  if (sortedRounds.length > 0) {
+    const latest = sortedRounds[0];
+    const best = [...latest.scores].sort((a,b) => a.score - b.score)[0];
+    if (best) champText = best.name + ' (' + best.score + ')';
+  }
 
   document.getElementById('dashStats').innerHTML = `
     <div class="stat-card">
@@ -1264,10 +1272,10 @@ function renderDashboard() {
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon rounds">&#127948;</div>
+      <div class="stat-icon rounds" style="background:var(--gold-100)">&#127942;</div>
       <div>
-        <div class="stat-value">${totalRounds}</div>
-        <div class="stat-label">총 라운드</div>
+        <div class="stat-value" style="font-size:20px">${champText}</div>
+        <div class="stat-label">최근월 챔피언</div>
       </div>
     </div>
     <div class="stat-card">
@@ -1279,8 +1287,7 @@ function renderDashboard() {
     </div>`;
 
   // Recent 3 rounds
-  const sorted = [...DATA.rounds].sort((a,b) => b.date.localeCompare(a.date));
-  const recent = sorted.slice(0, 3);
+  const recent = sortedRounds.slice(0, 3);
   if (recent.length === 0) {
     document.getElementById('dashRecentRounds').innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#127948;</div><div class="empty-state-text">라운드 기록이 없습니다</div></div>';
     return;
