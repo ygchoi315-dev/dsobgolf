@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DS OB Golf Club 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Noto+Sans+KR:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -817,6 +818,7 @@ tr:hover td { background: var(--green-50); }
         <div class="logo-sub">2026 &middot; MEMBER ONLY</div>
       </div>
     </div>
+    <button class="btn btn-sm" id="adminToggleBtn" onclick="toggleAdmin()" style="background:rgba(255,255,255,0.15);color:var(--green-300);border:1px solid rgba(255,255,255,0.2)">&#128274; 관리자</button>
   </div>
   <nav class="nav-bar" id="navBar">
     <div class="nav-item active" data-page="dashboard">&#45824;&#49884;&#48372;&#46300;</div>
@@ -855,6 +857,7 @@ tr:hover td { background: var(--green-50); }
           <div class="card-title">&#47716;&#48260; &#44288;&#47532;</div>
           <div class="card-subtitle" id="memberCount"></div>
         </div>
+        <button class="btn btn-primary btn-sm admin-only" style="display:none" onclick="openMemberModal()">+ 멤버 추가</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -882,6 +885,7 @@ tr:hover td { background: var(--green-50); }
           <div class="card-title">&#46972;&#50868;&#46300; &#44592;&#47197;</div>
           <div class="card-subtitle" id="roundCount"></div>
         </div>
+        <button class="btn btn-primary btn-sm admin-only" style="display:none" onclick="openRoundModal()">+ 라운드 추가</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -910,6 +914,7 @@ tr:hover td { background: var(--green-50); }
           <div class="card-title">&#51077;&#44552; &#45236;&#50669;</div>
           <div class="card-subtitle">&#49688;&#51077; &#44592;&#47197;</div>
         </div>
+        <button class="btn btn-primary btn-sm admin-only" style="display:none" onclick="openDepositModal()">+ 입금 추가</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -931,6 +936,7 @@ tr:hover td { background: var(--green-50); }
           <div class="card-title">&#51648;&#52636; &#45236;&#50669;</div>
           <div class="card-subtitle">&#51648;&#52636; &#44592;&#47197;</div>
         </div>
+        <button class="btn btn-primary btn-sm admin-only" style="display:none" onclick="openExpenseModal()">+ 지출 추가</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -957,6 +963,7 @@ tr:hover td { background: var(--green-50); }
           <div class="card-title">&#54252;&#49345; &#45236;&#50669;</div>
           <div class="card-subtitle">2026&#45380; &#49688;&#49345; &#44592;&#47197;</div>
         </div>
+        <button class="btn btn-primary btn-sm admin-only" style="display:none" onclick="openAwardModal()">+ 포상 추가</button>
       </div>
       <div id="awardsContainer"></div>
     </div>
@@ -1028,6 +1035,16 @@ tr:hover td { background: var(--green-50); }
 const STORAGE_KEY = 'dsob_golf_data';
 const DATA_VERSION = 9;
 
+// ── Supabase Configuration ──
+const SUPABASE_URL = 'https://ykzsovhvrsafefbtmwou.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_86auzbifp1u5IHNGCrFiiQ_h0cfDX_D';
+const SUPABASE_ENABLED = SUPABASE_URL !== 'YOUR_SUPABASE_URL';
+
+let supabase = null;
+if (SUPABASE_ENABLED) {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+
 // ── Member colors for avatars ──
 const COLORS = ['#2d6147','#378056','#45a068','#6bc088','#c8a84e','#d4b962','#1a3a2a','#234d38','#3b82f6','#d94452','#8b6914','#2563eb','#059669','#d97706','#7c3aed'];
 
@@ -1077,8 +1094,112 @@ function getDefaultData() {
   };
 }
 
+// ── Admin Mode ──
+let isAdmin = false;
+const ADMIN_PW = '7523';
+
+function toggleAdmin() {
+  if (isAdmin) {
+    isAdmin = false;
+    updateAdminUI();
+    showToast('관리자 모드를 종료했습니다');
+    return;
+  }
+  const mc = document.getElementById('modalContainer');
+  mc.innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal" style="max-width:360px">
+        <div class="modal-header">
+          <div class="modal-title">관리자 인증</div>
+          <button class="btn-icon" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px">비밀번호를 입력하세요</p>
+          <div class="pw-input-wrap">
+            <input type="password" id="adminPwInput" class="form-input" placeholder="비밀번호" onkeydown="if(event.key==='Enter')checkAdminPw()">
+            <button class="btn btn-primary" onclick="checkAdminPw()">확인</button>
+          </div>
+          <div class="pw-error" id="pwError">비밀번호가 틀렸습니다</div>
+        </div>
+      </div>
+    </div>`;
+  setTimeout(() => document.getElementById('adminPwInput')?.focus(), 100);
+}
+
+function checkAdminPw() {
+  const pw = document.getElementById('adminPwInput').value;
+  if (pw === ADMIN_PW) {
+    isAdmin = true;
+    closeModal();
+    updateAdminUI();
+    renderAll();
+    showToast('관리자 모드가 활성화되었습니다');
+  } else {
+    document.getElementById('pwError').style.display = 'block';
+  }
+}
+
+function updateAdminUI() {
+  const btn = document.getElementById('adminToggleBtn');
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.style.display = isAdmin ? '' : 'none';
+  });
+  if (isAdmin) {
+    btn.innerHTML = '&#128275; 관리자 ON';
+    btn.style.background = 'rgba(200,168,78,0.3)';
+    btn.style.color = 'var(--gold-300)';
+    btn.style.borderColor = 'var(--gold-500)';
+  } else {
+    btn.innerHTML = '&#128274; 관리자';
+    btn.style.background = 'rgba(255,255,255,0.15)';
+    btn.style.color = 'var(--green-300)';
+    btn.style.borderColor = 'rgba(255,255,255,0.2)';
+  }
+}
+
 // ── Data Management ──
 let DATA;
+let _savingToSupabase = false;
+
+// Supabase에서 데이터 불러오기 (비동기)
+async function loadDataFromSupabase() {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('app_data')
+      .select('data')
+      .eq('id', 1)
+      .single();
+    if (error) {
+      if (error.code === 'PGRST116') return null; // row not found
+      console.error('Supabase load error:', error);
+      return null;
+    }
+    return data?.data || null;
+  } catch(e) {
+    console.error('Supabase load exception:', e);
+    return null;
+  }
+}
+
+// Supabase에 데이터 저장 (비동기)
+async function saveDataToSupabase() {
+  if (!supabase || _savingToSupabase) return;
+  _savingToSupabase = true;
+  try {
+    const { error } = await supabase
+      .from('app_data')
+      .upsert({ id: 1, data: DATA, updated_at: new Date().toISOString() });
+    if (error) {
+      console.error('Supabase save error:', error);
+      showToast('서버 저장 실패. 로컬에만 저장됨.');
+    }
+  } catch(e) {
+    console.error('Supabase save exception:', e);
+  } finally {
+    _savingToSupabase = false;
+  }
+}
 
 function loadData() {
   try {
@@ -1090,23 +1211,29 @@ function loadData() {
         return;
       }
     }
-    // Version mismatch or no data - reset
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(STORAGE_KEY + '_version');
     DATA = getDefaultData();
-    saveData();
+    saveDataLocal();
   } catch(e) {
     DATA = getDefaultData();
-    saveData();
+    saveDataLocal();
   }
 }
 
-function saveData() {
+function saveDataLocal() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA));
     localStorage.setItem(STORAGE_KEY + '_ver', DATA_VERSION);
   } catch(e) {
     showToast('저장 공간이 부족합니다');
+  }
+}
+
+function saveData() {
+  saveDataLocal();
+  if (SUPABASE_ENABLED) {
+    saveDataToSupabase();
   }
 }
 
@@ -1254,6 +1381,7 @@ function renderMembers() {
   const sorted = [...DATA.members].sort((a,b) => a.name.localeCompare(b.name, 'ko'));
   let html = '';
   sorted.forEach(m => {
+    const adminBtns = isAdmin ? `<td><button class="btn btn-sm btn-secondary" onclick="editMember(${m.id})">수정</button> <button class="btn btn-sm btn-danger" onclick="deleteMember(${m.id})">삭제</button></td>` : '';
     html += `<tr>
       <td><div class="member-row"><div class="member-avatar" style="background:${getColor(m.name)}">${m.name.charAt(0)}</div>${m.name}</div></td>
       <td><span class="badge ${m.type==='정회원'?'badge-green':'badge-gold'}">${m.type}</span></td>
@@ -1261,6 +1389,7 @@ function renderMembers() {
       <td style="font-family:'JetBrains Mono',monospace">${m.bestScore != null ? m.bestScore : '-'}</td>
       <td>${m.rounds || 0}</td>
       <td style="font-family:'JetBrains Mono',monospace">${m.avgScore != null ? m.avgScore : '-'}</td>
+      ${adminBtns}
     </tr>`;
   });
   tbody.innerHTML = html;
@@ -1360,12 +1489,14 @@ function renderRounds() {
   }
   sorted.forEach(r => {
     const best = getBestScore(r);
+    const adminBtns = isAdmin ? `<td><button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();editRound(${r.id})">수정</button> <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteRound(${r.id})">삭제</button></td>` : '';
     html += `<tr class="round-detail-row" onclick="showRoundDetail(${r.id})">
       <td>${fmtDate(r.date)}</td>
       <td>${r.label||''}</td>
       <td>${r.course}</td>
       <td>${r.scores.length}명</td>
       <td style="font-family:'JetBrains Mono',monospace">${best}</td>
+      ${adminBtns}
     </tr>`;
   });
   tbody.innerHTML = html;
@@ -1526,10 +1657,12 @@ function renderFinance() {
   const dtbody = document.getElementById('depositTableBody');
   let dhtml = '';
   [...DATA.deposits].sort((a,b) => (a.date||'').localeCompare(b.date||'')).forEach(d => {
+    const adminBtns = isAdmin ? `<td><button class="btn btn-sm btn-secondary" onclick="editDeposit(${d.id})">수정</button> <button class="btn btn-sm btn-danger" onclick="deleteDeposit(${d.id})">삭제</button></td>` : '';
     dhtml += `<tr>
       <td>${d.date}</td>
       <td>${d.desc}</td>
       <td style="font-family:'JetBrains Mono',monospace;color:var(--green-700)">${fmt(d.amount)}</td>
+      ${adminBtns}
     </tr>`;
   });
   if (DATA.deposits.length === 0) dhtml = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px">입금 내역이 없습니다. 아직 기록이 없습니다.</td></tr>';
@@ -1541,12 +1674,14 @@ function renderFinance() {
   [...DATA.expenses].sort((a,b) => (a.date||'').localeCompare(b.date||'')).forEach(e => {
     const color = e.amount < 0 ? 'var(--green-700)' : 'var(--red-500)';
     const receiptHtml = e.receipt ? `<img src="${e.receipt}" class="receipt-thumb" onclick="event.stopPropagation();openLightbox('${e.receipt.replace(/'/g,"\\'")}')" alt="영수증">` : '-';
+    const adminBtns = isAdmin ? `<td><button class="btn btn-sm btn-secondary" onclick="editExpense(${e.id})">수정</button> <button class="btn btn-sm btn-danger" onclick="deleteExpense(${e.id})">삭제</button></td>` : '';
     ehtml += `<tr>
       <td>${e.date}</td>
       <td>${e.desc}</td>
       <td style="font-family:'JetBrains Mono',monospace;color:${color}">${fmt(e.amount)}</td>
       <td>${e.note || ''}</td>
       <td>${receiptHtml}</td>
+      ${adminBtns}
     </tr>`;
   });
   if (DATA.expenses.length === 0) ehtml = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px">지출 내역이 없습니다. 아직 기록이 없습니다.</td></tr>';
@@ -2042,8 +2177,40 @@ function renderContacts() {
 // ══════════════════════════════════════
 // INIT
 // ══════════════════════════════════════
+
+// 먼저 localStorage에서 로드 (즉시 렌더링)
 loadData();
 renderAll();
+
+// Supabase가 활성화되어 있으면 서버에서 최신 데이터를 가져와 덮어씀
+if (SUPABASE_ENABLED) {
+  (async () => {
+    const cloudData = await loadDataFromSupabase();
+    if (cloudData) {
+      DATA = cloudData;
+      saveDataLocal(); // 로컬도 동기화
+      renderAll();
+      showToast('서버에서 최신 데이터를 불러왔습니다');
+    } else {
+      // 서버에 데이터가 없으면 현재 로컬 데이터를 업로드
+      await saveDataToSupabase();
+      showToast('로컬 데이터를 서버에 업로드했습니다');
+    }
+  })();
+
+  // 실시간 구독: 다른 사용자가 데이터를 변경하면 자동 반영
+  supabase
+    .channel('app_data_changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'app_data' }, (payload) => {
+      if (payload.new && payload.new.data && !_savingToSupabase) {
+        DATA = payload.new.data;
+        saveDataLocal();
+        renderAll();
+        showToast('다른 사용자가 데이터를 업데이트했습니다');
+      }
+    })
+    .subscribe();
+}
 </script>
 </body>
 </html>
