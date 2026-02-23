@@ -820,14 +820,14 @@ tr:hover td { background: var(--green-50); }
     <button class="btn btn-sm" id="adminToggleBtn" onclick="toggleAdmin()" style="background:rgba(255,255,255,0.15);color:var(--green-300);border:1px solid rgba(255,255,255,0.2)">&#128274; 관리자</button>
   </div>
   <nav class="nav-bar" id="navBar">
-    <div class="nav-item active" data-page="dashboard">&#45824;&#49884;&#48372;&#46300;</div>
-    <div class="nav-item" data-page="members">&#47716;&#48260;</div>
-    <div class="nav-item" data-page="rounds">&#46972;&#50868;&#46300;</div>
-    <div class="nav-item" data-page="finance">&#51221;&#49328;/&#54924;&#48708;</div>
-    <div class="nav-item" data-page="awards">&#54252;&#49345;</div>
-    <div class="nav-item" data-page="companion">&#46041;&#48152;&#51088;</div>
-    <div class="nav-item" data-page="bylaws">&#51221;&#44288;</div>
-    <div class="nav-item" data-page="contacts">&#50672;&#46973;&#52376;</div>
+    <div class="nav-item active" data-page="dashboard" onclick="switchPage(this)">&#45824;&#49884;&#48372;&#46300;</div>
+    <div class="nav-item" data-page="members" onclick="switchPage(this)">&#47716;&#48260;</div>
+    <div class="nav-item" data-page="rounds" onclick="switchPage(this)">&#46972;&#50868;&#46300;</div>
+    <div class="nav-item" data-page="finance" onclick="switchPage(this)">&#51221;&#49328;/&#54924;&#48708;</div>
+    <div class="nav-item" data-page="awards" onclick="switchPage(this)">&#54252;&#49345;</div>
+    <div class="nav-item" data-page="companion" onclick="switchPage(this)">&#46041;&#48152;&#51088;</div>
+    <div class="nav-item" data-page="bylaws" onclick="switchPage(this)">&#51221;&#44288;</div>
+    <div class="nav-item" data-page="contacts" onclick="switchPage(this)">&#50672;&#46973;&#52376;</div>
   </nav>
 </header>
 
@@ -1031,16 +1031,21 @@ tr:hover td { background: var(--green-50); }
 // DS OB Golf Club Management Application
 // =============================================
 
-// ── Navigation (최우선 실행 - Supabase와 무관하게 즉시 동작) ──
-document.querySelectorAll('.nav-item').forEach(function(item) {
-  item.addEventListener('click', function() {
-    document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
-    item.classList.add('active');
-    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
-    var targetPage = document.getElementById('page-' + item.dataset.page);
-    if (targetPage) targetPage.classList.add('active');
-  });
-});
+// ── Navigation (글로벌 함수 - onclick 핸들러에서 직접 호출) ──
+function switchPage(item) {
+  var pageName = item.getAttribute('data-page');
+  if (!pageName) return;
+
+  var allItems = document.getElementsByClassName('nav-item');
+  for (var i = 0; i < allItems.length; i++) allItems[i].classList.remove('active');
+  item.classList.add('active');
+
+  var allPages = document.getElementsByClassName('page');
+  for (var i = 0; i < allPages.length; i++) allPages[i].classList.remove('active');
+
+  var targetPage = document.getElementById('page-' + pageName);
+  if (targetPage) targetPage.classList.add('active');
+}
 
 const STORAGE_KEY = 'dsob_golf_data';
 const DATA_VERSION = 9;
