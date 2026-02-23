@@ -1032,6 +1032,16 @@ tr:hover td { background: var(--green-50); }
 // DS OB Golf Club Management Application
 // =============================================
 
+// ── Navigation (최우선 실행) ──
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    item.classList.add('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + item.dataset.page).classList.add('active');
+  });
+});
+
 const STORAGE_KEY = 'dsob_golf_data';
 const DATA_VERSION = 9;
 
@@ -1041,7 +1051,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_86auzbifp1u5IHNGCrFiiQ_h0cfDX_D';
 const SUPABASE_ENABLED = SUPABASE_URL !== 'YOUR_SUPABASE_URL';
 
 let supabase = null;
-if (SUPABASE_ENABLED) {
+if (SUPABASE_ENABLED && window.supabase) {
   try {
     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   } catch (e) {
@@ -1292,15 +1302,7 @@ function openLightbox(src) {
     </div>`;
 }
 
-// ── Navigation ──
-document.querySelectorAll('.nav-item').forEach(item => {
-  item.addEventListener('click', () => {
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    item.classList.add('active');
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById('page-' + item.dataset.page).classList.add('active');
-  });
-});
+// (Navigation moved to top of script)
 
 // ══════════════════════════════════════
 // RENDER FUNCTIONS
