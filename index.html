@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DS OB Golf Club 2026</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Noto+Sans+KR:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -1032,13 +1031,14 @@ tr:hover td { background: var(--green-50); }
 // DS OB Golf Club Management Application
 // =============================================
 
-// ── Navigation (최우선 실행) ──
-document.querySelectorAll('.nav-item').forEach(item => {
-  item.addEventListener('click', () => {
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+// ── Navigation (최우선 실행 - Supabase와 무관하게 즉시 동작) ──
+document.querySelectorAll('.nav-item').forEach(function(item) {
+  item.addEventListener('click', function() {
+    document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
     item.classList.add('active');
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById('page-' + item.dataset.page).classList.add('active');
+    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+    var targetPage = document.getElementById('page-' + item.dataset.page);
+    if (targetPage) targetPage.classList.add('active');
   });
 });
 
@@ -1051,13 +1051,15 @@ const SUPABASE_ANON_KEY = 'sb_publishable_86auzbifp1u5IHNGCrFiiQ_h0cfDX_D';
 const SUPABASE_ENABLED = SUPABASE_URL !== 'YOUR_SUPABASE_URL';
 
 let supabase = null;
-if (SUPABASE_ENABLED && window.supabase) {
+function tryInitSupabase() {
+  if (supabase || !SUPABASE_ENABLED || !window.supabase) return;
   try {
     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   } catch (e) {
     console.error('Supabase 연결 실패:', e);
   }
 }
+tryInitSupabase();
 
 // ── Member colors for avatars ──
 const COLORS = ['#2d6147','#378056','#45a068','#6bc088','#c8a84e','#d4b962','#1a3a2a','#234d38','#3b82f6','#d94452','#8b6914','#2563eb','#059669','#d97706','#7c3aed'];
@@ -1301,8 +1303,6 @@ function openLightbox(src) {
       <img src="${src}" alt="확대 이미지">
     </div>`;
 }
-
-// (Navigation moved to top of script)
 
 // ══════════════════════════════════════
 // RENDER FUNCTIONS
@@ -2188,18 +2188,20 @@ function renderContacts() {
 loadData();
 renderAll();
 
-// Supabase가 활성화되어 있으면 서버에서 최신 데이터를 가져와 덮어씀
-if (SUPABASE_ENABLED && supabase) {
+// Supabase 연동 초기화 (비동기 로드 대응)
+function initSupabaseSync() {
+  tryInitSupabase();
+  if (!SUPABASE_ENABLED || !supabase) return;
+
   (async () => {
     try {
       const cloudData = await loadDataFromSupabase();
       if (cloudData) {
         DATA = cloudData;
-        saveDataLocal(); // 로컬도 동기화
+        saveDataLocal();
         renderAll();
         showToast('서버에서 최신 데이터를 불러왔습니다');
       } else {
-        // 서버에 데이터가 없으면 현재 로컬 데이터를 업로드
         await saveDataToSupabase();
         showToast('로컬 데이터를 서버에 업로드했습니다');
       }
@@ -2208,7 +2210,6 @@ if (SUPABASE_ENABLED && supabase) {
     }
   })();
 
-  // 실시간 구독: 다른 사용자가 데이터를 변경하면 자동 반영
   try {
     supabase
       .channel('app_data_changes')
@@ -2225,6 +2226,13 @@ if (SUPABASE_ENABLED && supabase) {
     console.error('Supabase 실시간 구독 실패:', e);
   }
 }
+
+// Supabase가 이미 로드되었으면 즉시 초기화, 아니면 비동기 로드 후 초기화
+if (window.supabase) {
+  initSupabaseSync();
+}
 </script>
+<!-- Supabase SDK: async 로드로 페이지 렌더링 차단 방지 -->
+<script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onload="if(typeof initSupabaseSync==='function')initSupabaseSync()"></script>
 </body>
 </html>
