@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DS OB Golf Club 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Noto+Sans+KR:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -1028,6 +1029,17 @@ tr:hover td { background: var(--green-50); }
 const STORAGE_KEY = 'dsob_golf_data';
 const DATA_VERSION = 9;
 
+// ── Supabase Configuration ──
+// TODO: 아래 값을 본인의 Supabase 프로젝트 정보로 교체하세요
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';       // 예: https://xxxxx.supabase.co
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'; // 예: eyJhbGciOiJIUzI1NiIs...
+const SUPABASE_ENABLED = SUPABASE_URL !== 'YOUR_SUPABASE_URL';
+
+let supabase = null;
+if (SUPABASE_ENABLED) {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+
 // ── Member colors for avatars ──
 const COLORS = ['#2d6147','#378056','#45a068','#6bc088','#c8a84e','#d4b962','#1a3a2a','#234d38','#3b82f6','#d94452','#8b6914','#2563eb','#059669','#d97706','#7c3aed'];
 
@@ -1079,6 +1091,47 @@ function getDefaultData() {
 
 // ── Data Management ──
 let DATA;
+let _savingToSupabase = false;
+
+// Supabase에서 데이터 불러오기 (비동기)
+async function loadDataFromSupabase() {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('app_data')
+      .select('data')
+      .eq('id', 1)
+      .single();
+    if (error) {
+      if (error.code === 'PGRST116') return null; // row not found
+      console.error('Supabase load error:', error);
+      return null;
+    }
+    return data?.data || null;
+  } catch(e) {
+    console.error('Supabase load exception:', e);
+    return null;
+  }
+}
+
+// Supabase에 데이터 저장 (비동기)
+async function saveDataToSupabase() {
+  if (!supabase || _savingToSupabase) return;
+  _savingToSupabase = true;
+  try {
+    const { error } = await supabase
+      .from('app_data')
+      .upsert({ id: 1, data: DATA, updated_at: new Date().toISOString() });
+    if (error) {
+      console.error('Supabase save error:', error);
+      showToast('서버 저장 실패. 로컬에만 저장됨.');
+    }
+  } catch(e) {
+    console.error('Supabase save exception:', e);
+  } finally {
+    _savingToSupabase = false;
+  }
+}
 
 function loadData() {
   try {
@@ -1090,23 +1143,29 @@ function loadData() {
         return;
       }
     }
-    // Version mismatch or no data - reset
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(STORAGE_KEY + '_version');
     DATA = getDefaultData();
-    saveData();
+    saveDataLocal();
   } catch(e) {
     DATA = getDefaultData();
-    saveData();
+    saveDataLocal();
   }
 }
 
-function saveData() {
+function saveDataLocal() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA));
     localStorage.setItem(STORAGE_KEY + '_ver', DATA_VERSION);
   } catch(e) {
     showToast('저장 공간이 부족합니다');
+  }
+}
+
+function saveData() {
+  saveDataLocal();
+  if (SUPABASE_ENABLED) {
+    saveDataToSupabase();
   }
 }
 
@@ -2042,8 +2101,40 @@ function renderContacts() {
 // ══════════════════════════════════════
 // INIT
 // ══════════════════════════════════════
+
+// 먼저 localStorage에서 로드 (즉시 렌더링)
 loadData();
 renderAll();
+
+// Supabase가 활성화되어 있으면 서버에서 최신 데이터를 가져와 덮어씀
+if (SUPABASE_ENABLED) {
+  (async () => {
+    const cloudData = await loadDataFromSupabase();
+    if (cloudData) {
+      DATA = cloudData;
+      saveDataLocal(); // 로컬도 동기화
+      renderAll();
+      showToast('서버에서 최신 데이터를 불러왔습니다');
+    } else {
+      // 서버에 데이터가 없으면 현재 로컬 데이터를 업로드
+      await saveDataToSupabase();
+      showToast('로컬 데이터를 서버에 업로드했습니다');
+    }
+  })();
+
+  // 실시간 구독: 다른 사용자가 데이터를 변경하면 자동 반영
+  supabase
+    .channel('app_data_changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'app_data' }, (payload) => {
+      if (payload.new && payload.new.data && !_savingToSupabase) {
+        DATA = payload.new.data;
+        saveDataLocal();
+        renderAll();
+        showToast('다른 사용자가 데이터를 업데이트했습니다');
+      }
+    })
+    .subscribe();
+}
 </script>
 </body>
 </html>
