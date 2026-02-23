@@ -1042,7 +1042,11 @@ const SUPABASE_ENABLED = SUPABASE_URL !== 'YOUR_SUPABASE_URL';
 
 let supabase = null;
 if (SUPABASE_ENABLED) {
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  try {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  } catch (e) {
+    console.error('Supabase 연결 실패:', e);
+  }
 }
 
 // ── Member colors for avatars ──
@@ -2183,33 +2187,41 @@ loadData();
 renderAll();
 
 // Supabase가 활성화되어 있으면 서버에서 최신 데이터를 가져와 덮어씀
-if (SUPABASE_ENABLED) {
+if (SUPABASE_ENABLED && supabase) {
   (async () => {
-    const cloudData = await loadDataFromSupabase();
-    if (cloudData) {
-      DATA = cloudData;
-      saveDataLocal(); // 로컬도 동기화
-      renderAll();
-      showToast('서버에서 최신 데이터를 불러왔습니다');
-    } else {
-      // 서버에 데이터가 없으면 현재 로컬 데이터를 업로드
-      await saveDataToSupabase();
-      showToast('로컬 데이터를 서버에 업로드했습니다');
+    try {
+      const cloudData = await loadDataFromSupabase();
+      if (cloudData) {
+        DATA = cloudData;
+        saveDataLocal(); // 로컬도 동기화
+        renderAll();
+        showToast('서버에서 최신 데이터를 불러왔습니다');
+      } else {
+        // 서버에 데이터가 없으면 현재 로컬 데이터를 업로드
+        await saveDataToSupabase();
+        showToast('로컬 데이터를 서버에 업로드했습니다');
+      }
+    } catch (e) {
+      console.error('Supabase 데이터 로드 실패:', e);
     }
   })();
 
   // 실시간 구독: 다른 사용자가 데이터를 변경하면 자동 반영
-  supabase
-    .channel('app_data_changes')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'app_data' }, (payload) => {
-      if (payload.new && payload.new.data && !_savingToSupabase) {
-        DATA = payload.new.data;
-        saveDataLocal();
-        renderAll();
-        showToast('다른 사용자가 데이터를 업데이트했습니다');
-      }
-    })
-    .subscribe();
+  try {
+    supabase
+      .channel('app_data_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'app_data' }, (payload) => {
+        if (payload.new && payload.new.data && !_savingToSupabase) {
+          DATA = payload.new.data;
+          saveDataLocal();
+          renderAll();
+          showToast('다른 사용자가 데이터를 업데이트했습니다');
+        }
+      })
+      .subscribe();
+  } catch (e) {
+    console.error('Supabase 실시간 구독 실패:', e);
+  }
 }
 </script>
 </body>
