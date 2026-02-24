@@ -1129,11 +1129,11 @@ const SUPABASE_URL = 'https://ykzsovhvrsafefbtmwou.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrenNvdmh2cnNhZmVmYnRtd291Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NDUzODksImV4cCI6MjA4NzQyMTM4OX0.57BFyuwfJctRLC3_ezxjXMj68LEJe3ezqZWDCg-gzB8';
 const SUPABASE_ENABLED = SUPABASE_URL !== 'YOUR_SUPABASE_URL';
 
-let supabase = null;
+var supabaseClient = null;
 function tryInitSupabase() {
-  if (supabase || !SUPABASE_ENABLED || !window.supabase) return;
+  if (supabaseClient || !SUPABASE_ENABLED || !window.supabase) return;
   try {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   } catch (e) {
     console.error('Supabase 연결 실패:', e);
   }
@@ -1282,9 +1282,9 @@ function updateSyncStatus(status) {
 
 // Supabase에서 데이터 불러오기 (비동기)
 async function loadDataFromSupabase() {
-  if (!supabase) return null;
+  if (!supabaseClient) return null;
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('app_data')
       .select('data, updated_at')
       .eq('id', 1)
@@ -1303,12 +1303,12 @@ async function loadDataFromSupabase() {
 
 // Supabase에 데이터 저장 (비동기)
 async function saveDataToSupabase() {
-  if (!supabase || _savingToSupabase) return;
+  if (!supabaseClient || _savingToSupabase) return;
   _savingToSupabase = true;
   _lastSaveTime = Date.now();
   updateSyncStatus('syncing');
   try {
-    const { error } = await supabase
+    const { error } = await supabaseClient
       .from('app_data')
       .upsert({ id: 1, data: DATA, updated_at: new Date().toISOString() });
     if (error) {
@@ -1330,7 +1330,7 @@ async function saveDataToSupabase() {
 function startPolling() {
   if (_pollInterval) return;
   _pollInterval = setInterval(async () => {
-    if (_savingToSupabase || !supabase) return;
+    if (_savingToSupabase || !supabaseClient) return;
     try {
       const cloudData = await loadDataFromSupabase();
       if (cloudData && JSON.stringify(cloudData) !== JSON.stringify(DATA)) {
@@ -2459,7 +2459,7 @@ let _supabaseInitialized = false;
 function initSupabaseSync() {
   if (_supabaseInitialized) return;
   tryInitSupabase();
-  if (!SUPABASE_ENABLED || !supabase) {
+  if (!SUPABASE_ENABLED || !supabaseClient) {
     updateSyncStatus('disconnected');
     return;
   }
@@ -2488,7 +2488,7 @@ function initSupabaseSync() {
 
   // 실시간 구독 + 상태 모니터링
   try {
-    supabase
+    supabaseClient
       .channel('app_data_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'app_data' }, (payload) => {
         // _savingToSupabase가 true여도 2초 이상 지난 이벤트는 다른 사용자의 변경으로 간주
@@ -2507,7 +2507,7 @@ function initSupabaseSync() {
           // Realtime 연결 성공 시 폴링은 30초로 늦춤 (백업용)
           stopPolling();
           _pollInterval = setInterval(async () => {
-            if (_savingToSupabase || !supabase) return;
+            if (_savingToSupabase || !supabaseClient) return;
             try {
               const cloudData = await loadDataFromSupabase();
               if (cloudData && JSON.stringify(cloudData) !== JSON.stringify(DATA)) {
@@ -2533,7 +2533,7 @@ function initSupabaseSync() {
 
   // 페이지 포커스 시 최신 데이터 동기화
   document.addEventListener('visibilitychange', async () => {
-    if (document.visibilityState === 'visible' && supabase && !_savingToSupabase) {
+    if (document.visibilityState === 'visible' && supabaseClient && !_savingToSupabase) {
       try {
         const cloudData = await loadDataFromSupabase();
         if (cloudData && JSON.stringify(cloudData) !== JSON.stringify(DATA)) {
