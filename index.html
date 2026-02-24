@@ -1156,7 +1156,7 @@ function getDefaultData() {
       { id: 1, name: '김창진', type: '정회원', handicap: 97.0, bestScore: 94, bestScore25: 94, rounds: 0, avgScore: null },
       { id: 2, name: '박인혁', type: '정회원', handicap: 101.1, bestScore: 96, bestScore25: 96, rounds: 0, avgScore: null },
       { id: 3, name: '배현준', type: '정회원', handicap: 89.4, bestScore: 81, bestScore25: 81, rounds: 0, avgScore: null },
-      { id: 4, name: '송용수', type: '정회원', handicap: 93.0, bestScore: 87, bestScore25: 87, rounds: 0, avgScore: null },
+      { id: 4, name: '승용수', type: '정회원', handicap: 93.0, bestScore: 87, bestScore25: 87, rounds: 0, avgScore: null },
       { id: 5, name: '이강진', type: '정회원', handicap: 86.7, bestScore: 83, bestScore25: 83, rounds: 0, avgScore: null },
       { id: 6, name: '이성재', type: '정회원', handicap: 85.7, bestScore: 80, bestScore25: 80, rounds: 0, avgScore: null },
       { id: 7, name: '이재국', type: '정회원', handicap: 95.0, bestScore: 95, bestScore25: 95, rounds: 0, avgScore: null },
@@ -1380,7 +1380,7 @@ function loadData() {
 // ── 데이터 마이그레이션: bestScore25 필드 추가 + 삭제된 멤버 정리 ──
 const REMOVED_MEMBERS = ['김영옥', '이현재'];
 const BEST_SCORE_25_MAP = {
-  '김창진': 94, '박인혁': 96, '배현준': 81, '송용수': 87,
+  '김창진': 94, '박인혁': 96, '배현준': 81, '승용수': 87,
   '이강진': 83, '이성재': 80, '이재국': 95, '이지훈': 82,
   '장민구': 86, '전형건': 89, '최영근': 84
 };
@@ -1392,8 +1392,8 @@ function migrateData() {
     if (m.bestScore25 === undefined) {
       m.bestScore25 = BEST_SCORE_25_MAP[m.name] || null;
     }
-    // 이름 오타 수정 (승용수 → 송용수)
-    if (m.name === '승용수') m.name = '송용수';
+    // 이름 오타 수정 (송용수 → 승용수)
+    if (m.name === '송용수') m.name = '승용수';
   });
   recalcMemberStats();
 }
