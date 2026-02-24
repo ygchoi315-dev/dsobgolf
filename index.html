@@ -682,6 +682,22 @@ tr:hover td { background: var(--green-50); }
   text-align: center;
 }
 
+.score-entry-item select {
+  width: 70px;
+  padding: 6px 8px;
+  border: 1.5px solid var(--sand-300);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-family: 'Noto Sans KR', sans-serif;
+  background: var(--white);
+}
+
+.score-entry-item select:focus {
+  outline: none;
+  border-color: var(--green-500);
+  box-shadow: 0 0 0 3px rgba(69,160,104,0.12);
+}
+
 .score-entry-item input[type="number"]:focus {
   outline: none;
   border-color: var(--green-500);
@@ -803,6 +819,14 @@ tr:hover td { background: var(--green-50); }
   .companion-table { font-size: 11px; }
   .companion-table th, .companion-table td { padding: 4px 5px; min-width: 32px; }
 }
+
+/* ── Awards Summary ── */
+.awards-summary-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 16px; }
+.awards-summary-table th { background: var(--gold-100); color: var(--green-900); font-weight: 600; text-align: left; padding: 10px 14px; border-bottom: 2px solid var(--gold-200); font-size: 13px; }
+.awards-summary-table td { padding: 10px 14px; border-bottom: 1px solid var(--sand-200); }
+.awards-summary-table tr:hover td { background: var(--green-50); }
+.award-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500; background: var(--gold-100); color: #8b6914; margin: 2px 2px; }
+.award-total { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--green-700); font-size: 18px; }
 </style>
 </head>
 <body>
@@ -866,8 +890,8 @@ tr:hover td { background: var(--green-50); }
               <th>&#44396;&#48516;</th>
               <th>25년 평균</th>
               <th>모임중라베</th>
-              <th>라운드수</th>
-              <th>&#54217;&#44512;&#49828;&#53076;&#50612;</th>
+              <th>26년 라운드수</th>
+              <th>26년 평균스코어</th>
             </tr>
           </thead>
           <tbody id="memberTableBody"></tbody>
@@ -966,6 +990,15 @@ tr:hover td { background: var(--green-50); }
       </div>
       <div id="awardsContainer"></div>
     </div>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">멤버별 수상 집계</div>
+          <div class="card-subtitle">2026년 전체 수상 현황</div>
+        </div>
+      </div>
+      <div class="table-wrap" id="awardsSummary"></div>
+    </div>
   </div>
 
   <!-- Companion Matrix -->
@@ -974,7 +1007,7 @@ tr:hover td { background: var(--green-50); }
       <div class="card-header">
         <div>
           <div class="card-title">동반자 카운트</div>
-          <div class="card-subtitle">2026년 라운드 기록 기반 자동 집계</div>
+          <div class="card-subtitle">2026년 같은 조 기준 자동 집계</div>
         </div>
       </div>
       <div class="table-wrap" id="companionMatrix"></div>
@@ -1436,12 +1469,12 @@ function openMemberModal(editId) {
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">라운드수</label>
-              <input class="form-input" type="number" id="mRounds" value="${m ? m.rounds || 0 : 0}">
+              <label class="form-label">26년 라운드수 (자동계산)</label>
+              <input class="form-input" type="number" id="mRounds" value="${m ? m.rounds || 0 : 0}" disabled style="background:var(--sand-100)">
             </div>
             <div class="form-group">
-              <label class="form-label">평균스코어</label>
-              <input class="form-input" type="number" step="0.1" id="mAvg" value="${m && m.avgScore != null ? m.avgScore : ''}">
+              <label class="form-label">26년 평균스코어 (자동계산)</label>
+              <input class="form-input" type="number" step="0.1" id="mAvg" value="${m && m.avgScore != null ? m.avgScore : ''}" disabled style="background:var(--sand-100)">
             </div>
           </div>
         </div>
@@ -1487,6 +1520,25 @@ function deleteMember(id) {
   }
 }
 
+// ── 멤버 통계 자동 재계산 (26년 라운드 기반) ──
+function recalcMemberStats() {
+  DATA.members.forEach(m => {
+    const memberScores = [];
+    DATA.rounds.forEach(r => {
+      if (!r.date || !r.date.startsWith('2026')) return;
+      const scoreEntry = r.scores.find(s => s.name === m.name);
+      if (scoreEntry) memberScores.push(scoreEntry.score);
+    });
+    m.rounds = memberScores.length;
+    if (memberScores.length > 0) {
+      m.avgScore = Math.round((memberScores.reduce((a,b) => a+b, 0) / memberScores.length) * 10) / 10;
+      m.bestScore = Math.min(...memberScores);
+    } else {
+      m.avgScore = null;
+    }
+  });
+}
+
 // ── Rounds ──
 function renderRounds() {
   const tbody = document.getElementById('roundTableBody');
@@ -1516,15 +1568,39 @@ function renderRounds() {
 function showRoundDetail(id) {
   const r = DATA.rounds.find(x => x.id === id);
   if (!r) return;
-  const sorted = [...r.scores].sort((a,b) => a.score - b.score);
+
+  // 조별 그룹핑
+  const hasGroups = r.scores.some(s => s.group);
   let listHtml = '';
-  sorted.forEach((s, i) => {
-    let rankIcon = '';
-    if (i === 0) rankIcon = '&#129351; ';
-    else if (i === 1) rankIcon = '&#129352; ';
-    else if (i === 2) rankIcon = '&#129353; ';
-    listHtml += `<li><span>${rankIcon}${s.name}</span><span class="score-val">${s.score}</span></li>`;
-  });
+
+  if (hasGroups) {
+    const groups = {};
+    r.scores.forEach(s => {
+      const g = s.group || 0;
+      if (!groups[g]) groups[g] = [];
+      groups[g].push(s);
+    });
+    const sortedKeys = Object.keys(groups).sort((a,b) => a - b);
+    sortedKeys.forEach(g => {
+      const label = g == 0 ? '조 미지정' : g + '조';
+      listHtml += `<li style="background:var(--green-50);font-weight:600;padding:6px 16px;border-bottom:none"><span>${label}</span><span></span></li>`;
+      const sorted = [...groups[g]].sort((a,b) => a.score - b.score);
+      sorted.forEach((s, i) => {
+        let rankIcon = '';
+        if (i === 0) rankIcon = '&#129351; ';
+        listHtml += `<li><span>&nbsp;&nbsp;${rankIcon}${s.name}</span><span class="score-val">${s.score}</span></li>`;
+      });
+    });
+  } else {
+    const sorted = [...r.scores].sort((a,b) => a.score - b.score);
+    sorted.forEach((s, i) => {
+      let rankIcon = '';
+      if (i === 0) rankIcon = '&#129351; ';
+      else if (i === 1) rankIcon = '&#129352; ';
+      else if (i === 2) rankIcon = '&#129353; ';
+      listHtml += `<li><span>${rankIcon}${s.name}</span><span class="score-val">${s.score}</span></li>`;
+    });
+  }
 
   const mc = document.getElementById('modalContainer');
   mc.innerHTML = `
@@ -1553,6 +1629,13 @@ function openRoundModal(editId) {
       <div class="score-entry-item">
         <input type="checkbox" id="chk_${m.id}" ${existing ? 'checked' : ''} onchange="toggleScoreInput(${m.id})">
         <label for="chk_${m.id}">${m.name}</label>
+        <select id="group_${m.id}" ${existing ? '' : 'disabled'}>
+          <option value="">조</option>
+          <option value="1" ${existing && existing.group==1?'selected':''}>1조</option>
+          <option value="2" ${existing && existing.group==2?'selected':''}>2조</option>
+          <option value="3" ${existing && existing.group==3?'selected':''}>3조</option>
+          <option value="4" ${existing && existing.group==4?'selected':''}>4조</option>
+        </select>
         <input type="number" id="score_${m.id}" placeholder="스코어" value="${existing ? existing.score : ''}" ${existing ? '' : 'disabled'} data-name="${m.name}">
       </div>`;
   });
@@ -1596,9 +1679,11 @@ function openRoundModal(editId) {
 function toggleScoreInput(mid) {
   const chk = document.getElementById('chk_' + mid);
   const inp = document.getElementById('score_' + mid);
+  const grp = document.getElementById('group_' + mid);
   inp.disabled = !chk.checked;
-  if (!chk.checked) inp.value = '';
-  if (chk.checked) inp.focus();
+  grp.disabled = !chk.checked;
+  if (!chk.checked) { inp.value = ''; grp.value = ''; }
+  if (chk.checked) grp.focus();
 }
 
 function saveRound(editId) {
@@ -1611,8 +1696,11 @@ function saveRound(editId) {
   DATA.members.forEach(m => {
     const chk = document.getElementById('chk_' + m.id);
     const inp = document.getElementById('score_' + m.id);
+    const grp = document.getElementById('group_' + m.id);
     if (chk && chk.checked && inp.value) {
-      scores.push({ name: m.name, score: parseInt(inp.value) });
+      const entry = { name: m.name, score: parseInt(inp.value) };
+      if (grp && grp.value) entry.group = parseInt(grp.value);
+      scores.push(entry);
     }
   });
 
@@ -1624,6 +1712,7 @@ function saveRound(editId) {
   } else {
     DATA.rounds.push({ id: nextId(DATA.rounds), date, label, course, scores });
   }
+  recalcMemberStats();
   saveData();
   renderAll();
   closeModal();
@@ -1636,6 +1725,7 @@ function deleteRound(id) {
   const r = DATA.rounds.find(x => x.id === id);
   if (r && confirm((r.label || fmtDate(r.date)) + ' 라운드를 삭제하시겠습니까?')) {
     DATA.rounds = DATA.rounds.filter(x => x.id !== id);
+    recalcMemberStats();
     saveData();
     renderAll();
     showToast('라운드가 삭제되었습니다');
@@ -1851,8 +1941,46 @@ function deleteExpense(id) {
 }
 
 // ── Awards ──
+function renderAwardsSummary() {
+  const container = document.getElementById('awardsSummary');
+  if (!DATA.awards || DATA.awards.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#128202;</div><div class="empty-state-text">포상 내역이 추가되면 집계됩니다</div></div>';
+    return;
+  }
+
+  // 멤버별 수상 집계
+  const summary = {};
+  DATA.awards.forEach(aw => {
+    aw.entries.forEach(e => {
+      const name = e.winner.trim();
+      if (!summary[name]) summary[name] = { total: 0, categories: {} };
+      summary[name].total++;
+      if (!summary[name].categories[e.category]) summary[name].categories[e.category] = 0;
+      summary[name].categories[e.category]++;
+    });
+  });
+
+  // 수상 횟수 내림차순 정렬
+  const sorted = Object.entries(summary).sort((a,b) => b[1].total - a[1].total);
+
+  let html = '<table class="awards-summary-table"><thead><tr><th>이름</th><th>총 수상</th><th>수상 내역</th></tr></thead><tbody>';
+  sorted.forEach(([name, info]) => {
+    const badges = Object.entries(info.categories).map(([cat, cnt]) =>
+      `<span class="award-badge">${cat}${cnt > 1 ? ' x' + cnt : ''}</span>`
+    ).join('');
+    html += `<tr>
+      <td><div class="member-row"><div class="member-avatar" style="background:${getColor(name)}">${name.charAt(0)}</div>${name}</div></td>
+      <td class="award-total">${info.total}</td>
+      <td>${badges}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
 function renderAwards() {
   const container = document.getElementById('awardsContainer');
+  renderAwardsSummary();
   if (!DATA.awards || DATA.awards.length === 0) {
     container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#127942;</div><div class="empty-state-text">포상 내역이 없습니다</div></div>';
     return;
@@ -2114,7 +2242,7 @@ function renderBylaws() {
   `;
 }
 
-// ── Companion Matrix ──
+// ── Companion Matrix (같은 조 기준 집계) ──
 function renderCompanion() {
   const container = document.getElementById('companionMatrix');
   const members = [...DATA.members].sort((a,b) => a.name.localeCompare(b.name, 'ko'));
@@ -2125,16 +2253,37 @@ function renderCompanion() {
     return;
   }
 
-  // Build count matrix
+  // Build count matrix (같은 조 기준)
   const matrix = {};
   names.forEach(n => { matrix[n] = {}; names.forEach(m => { matrix[n][m] = 0; }); });
 
   DATA.rounds.forEach(r => {
-    const participants = r.scores.map(s => s.name);
-    for (let i = 0; i < participants.length; i++) {
-      for (let j = 0; j < participants.length; j++) {
-        if (i !== j && matrix[participants[i]] && matrix[participants[i]][participants[j]] !== undefined) {
-          matrix[participants[i]][participants[j]]++;
+    const hasGroups = r.scores.some(s => s.group);
+    if (hasGroups) {
+      // 조가 지정된 라운드: 같은 조끼리만 동반자 카운트
+      const groups = {};
+      r.scores.forEach(s => {
+        if (!s.group) return;
+        if (!groups[s.group]) groups[s.group] = [];
+        groups[s.group].push(s.name);
+      });
+      Object.values(groups).forEach(groupMembers => {
+        for (let i = 0; i < groupMembers.length; i++) {
+          for (let j = 0; j < groupMembers.length; j++) {
+            if (i !== j && matrix[groupMembers[i]] && matrix[groupMembers[i]][groupMembers[j]] !== undefined) {
+              matrix[groupMembers[i]][groupMembers[j]]++;
+            }
+          }
+        }
+      });
+    } else {
+      // 조 미지정 라운드: 전체 참가자끼리 동반자 카운트 (기존 방식)
+      const participants = r.scores.map(s => s.name);
+      for (let i = 0; i < participants.length; i++) {
+        for (let j = 0; j < participants.length; j++) {
+          if (i !== j && matrix[participants[i]] && matrix[participants[i]][participants[j]] !== undefined) {
+            matrix[participants[i]][participants[j]]++;
+          }
         }
       }
     }
