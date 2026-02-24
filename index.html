@@ -1153,19 +1153,19 @@ function getColor(name) {
 function getDefaultData() {
   return {
     members: [
-      { id: 1, name: '김창진', type: '정회원', handicap: 97.0, bestScore: 94, rounds: 0, avgScore: null },
-      { id: 2, name: '박인혁', type: '정회원', handicap: 101.1, bestScore: 96, rounds: 0, avgScore: null },
-      { id: 3, name: '배현준', type: '정회원', handicap: 89.4, bestScore: 81, rounds: 0, avgScore: null },
-      { id: 4, name: '승용수', type: '정회원', handicap: 93.0, bestScore: 87, rounds: 0, avgScore: null },
-      { id: 5, name: '이강진', type: '정회원', handicap: 86.7, bestScore: 83, rounds: 0, avgScore: null },
-      { id: 6, name: '이성재', type: '정회원', handicap: 85.7, bestScore: 80, rounds: 0, avgScore: null },
-      { id: 7, name: '이재국', type: '정회원', handicap: 95.0, bestScore: 95, rounds: 0, avgScore: null },
-      { id: 8, name: '이지훈', type: '정회원', handicap: 89.0, bestScore: 82, rounds: 0, avgScore: null },
-      { id: 9, name: '장민구', type: '정회원', handicap: 93.4, bestScore: 86, rounds: 0, avgScore: null },
-      { id: 10, name: '전형건', type: '정회원', handicap: 94.1, bestScore: 89, rounds: 0, avgScore: null },
-      { id: 11, name: '최영근', type: '정회원', handicap: 90.4, bestScore: 84, rounds: 0, avgScore: null },
-      { id: 12, name: '윤준원', type: '정회원', handicap: null, bestScore: null, rounds: 0, avgScore: null },
-      { id: 13, name: '최기성', type: '정회원', handicap: null, bestScore: null, rounds: 0, avgScore: null },
+      { id: 1, name: '김창진', type: '정회원', handicap: 97.0, bestScore: 94, bestScore25: 94, rounds: 0, avgScore: null },
+      { id: 2, name: '박인혁', type: '정회원', handicap: 101.1, bestScore: 96, bestScore25: 96, rounds: 0, avgScore: null },
+      { id: 3, name: '배현준', type: '정회원', handicap: 89.4, bestScore: 81, bestScore25: 81, rounds: 0, avgScore: null },
+      { id: 4, name: '송용수', type: '정회원', handicap: 93.0, bestScore: 87, bestScore25: 87, rounds: 0, avgScore: null },
+      { id: 5, name: '이강진', type: '정회원', handicap: 86.7, bestScore: 83, bestScore25: 83, rounds: 0, avgScore: null },
+      { id: 6, name: '이성재', type: '정회원', handicap: 85.7, bestScore: 80, bestScore25: 80, rounds: 0, avgScore: null },
+      { id: 7, name: '이재국', type: '정회원', handicap: 95.0, bestScore: 95, bestScore25: 95, rounds: 0, avgScore: null },
+      { id: 8, name: '이지훈', type: '정회원', handicap: 89.0, bestScore: 82, bestScore25: 82, rounds: 0, avgScore: null },
+      { id: 9, name: '장민구', type: '정회원', handicap: 93.4, bestScore: 86, bestScore25: 86, rounds: 0, avgScore: null },
+      { id: 10, name: '전형건', type: '정회원', handicap: 94.1, bestScore: 89, bestScore25: 89, rounds: 0, avgScore: null },
+      { id: 11, name: '최영근', type: '정회원', handicap: 90.4, bestScore: 84, bestScore25: 84, rounds: 0, avgScore: null },
+      { id: 12, name: '윤준원', type: '정회원', handicap: null, bestScore: null, bestScore25: null, rounds: 0, avgScore: null },
+      { id: 13, name: '최기성', type: '정회원', handicap: null, bestScore: null, bestScore25: null, rounds: 0, avgScore: null },
     ],
     rounds: [],
     deposits: [],
@@ -1335,6 +1335,7 @@ function startPolling() {
       const cloudData = await loadDataFromSupabase();
       if (cloudData && JSON.stringify(cloudData) !== JSON.stringify(DATA)) {
         DATA = cloudData;
+        migrateData();
         saveDataLocal();
         renderAll();
         showToast('최신 데이터로 업데이트되었습니다');
@@ -1359,17 +1360,42 @@ function loadData() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         DATA = JSON.parse(saved);
+        migrateData();
+        saveDataLocal();
         return;
       }
     }
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(STORAGE_KEY + '_version');
     DATA = getDefaultData();
+    migrateData();
     saveDataLocal();
   } catch(e) {
     DATA = getDefaultData();
+    migrateData();
     saveDataLocal();
   }
+}
+
+// ── 데이터 마이그레이션: bestScore25 필드 추가 + 삭제된 멤버 정리 ──
+const REMOVED_MEMBERS = ['김영옥', '이현재'];
+const BEST_SCORE_25_MAP = {
+  '김창진': 94, '박인혁': 96, '배현준': 81, '송용수': 87,
+  '이강진': 83, '이성재': 80, '이재국': 95, '이지훈': 82,
+  '장민구': 86, '전형건': 89, '최영근': 84
+};
+function migrateData() {
+  // 삭제 대상 멤버 제거
+  DATA.members = DATA.members.filter(m => !REMOVED_MEMBERS.includes(m.name));
+  // bestScore25 필드가 없는 멤버에 추가
+  DATA.members.forEach(m => {
+    if (m.bestScore25 === undefined) {
+      m.bestScore25 = BEST_SCORE_25_MAP[m.name] || null;
+    }
+    // 이름 오타 수정 (승용수 → 송용수)
+    if (m.name === '승용수') m.name = '송용수';
+  });
+  recalcMemberStats();
 }
 
 function saveDataLocal() {
@@ -1597,7 +1623,7 @@ function saveMember(editId) {
     const m = DATA.members.find(x => x.id === editId);
     if (m) { m.name = name; m.type = type; m.handicap = handicap; m.rounds = rounds; m.avgScore = avgScore; }
   } else {
-    DATA.members.push({ id: nextId(DATA.members), name, type, handicap, rounds, avgScore });
+    DATA.members.push({ id: nextId(DATA.members), name, type, handicap, bestScore: null, bestScore25: null, rounds, avgScore });
   }
   saveData();
   renderAll();
@@ -1617,21 +1643,24 @@ function deleteMember(id) {
   }
 }
 
-// ── 멤버 통계 자동 재계산 (26년 라운드 기반) ──
+// ── 멤버 통계 자동 재계산 (모든 모임 라운드 기반) ──
 function recalcMemberStats() {
   DATA.members.forEach(m => {
     const memberScores = [];
     DATA.rounds.forEach(r => {
-      if (!r.date || !r.date.startsWith('2026')) return;
       const scoreEntry = r.scores.find(s => s.name === m.name);
       if (scoreEntry) memberScores.push(scoreEntry.score);
     });
     m.rounds = memberScores.length;
     if (memberScores.length > 0) {
       m.avgScore = Math.round((memberScores.reduce((a,b) => a+b, 0) / memberScores.length) * 10) / 10;
-      m.bestScore = Math.min(...memberScores);
+      const roundBest = Math.min(...memberScores);
+      // 25년 베스트와 라운드 베스트 중 더 낮은 값
+      m.bestScore = m.bestScore25 != null ? Math.min(m.bestScore25, roundBest) : roundBest;
     } else {
       m.avgScore = null;
+      // 라운드가 없으면 25년 베스트로 복원
+      m.bestScore = m.bestScore25 != null ? m.bestScore25 : null;
     }
   });
 }
@@ -2471,6 +2500,7 @@ function initSupabaseSync() {
       const cloudData = await loadDataFromSupabase();
       if (cloudData) {
         DATA = cloudData;
+        migrateData();
         saveDataLocal();
         renderAll();
         updateSyncStatus('connected');
@@ -2495,6 +2525,7 @@ function initSupabaseSync() {
         const isOwnSave = _savingToSupabase || (Date.now() - _lastSaveTime < 2000);
         if (payload.new && payload.new.data && !isOwnSave) {
           DATA = payload.new.data;
+          migrateData();
           saveDataLocal();
           renderAll();
           showToast('다른 사용자가 데이터를 업데이트했습니다');
@@ -2512,6 +2543,7 @@ function initSupabaseSync() {
               const cloudData = await loadDataFromSupabase();
               if (cloudData && JSON.stringify(cloudData) !== JSON.stringify(DATA)) {
                 DATA = cloudData;
+                migrateData();
                 saveDataLocal();
                 renderAll();
                 showToast('최신 데이터로 업데이트되었습니다');
@@ -2538,6 +2570,7 @@ function initSupabaseSync() {
         const cloudData = await loadDataFromSupabase();
         if (cloudData && JSON.stringify(cloudData) !== JSON.stringify(DATA)) {
           DATA = cloudData;
+          migrateData();
           saveDataLocal();
           renderAll();
           showToast('최신 데이터로 업데이트되었습니다');
