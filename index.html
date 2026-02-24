@@ -513,6 +513,8 @@ tr:hover td { background: var(--green-50); }
   color: var(--gold-500);
   margin: 6px 0;
 }
+.award-prize { font-size: 13px; color: var(--green-700); font-weight: 500; margin-bottom: 2px; }
+.award-reason { font-size: 12px; color: var(--text-muted); font-style: italic; }
 .award-detail { font-size: 13px; color: var(--text-muted); }
 
 /* ── Password Modal ── */
@@ -774,21 +776,26 @@ tr:hover td { background: var(--green-50); }
 /* ── Award entry rows in modal ── */
 .award-entry-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 6px;
   margin-bottom: 8px;
   align-items: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--sand-200);
 }
 .award-entry-row input {
-  padding: 8px 12px;
+  padding: 8px 10px;
   border: 1.5px solid var(--sand-300);
   border-radius: var(--radius-sm);
-  font-size: 14px;
+  font-size: 13px;
   font-family: 'Noto Sans KR', sans-serif;
 }
 .award-entry-row input:focus {
   outline: none;
   border-color: var(--green-500);
+}
+@media (max-width: 768px) {
+  .award-entry-row { grid-template-columns: 1fr 1fr; }
 }
 
 /* ── Responsive ── */
@@ -2010,6 +2017,8 @@ function renderAwards() {
         <div class="award-icon">${icon}</div>
         <div class="award-title">${e.category}</div>
         <div class="award-winner">${e.winner}</div>
+        ${e.prize ? `<div class="award-prize">&#127873; ${e.prize}</div>` : ''}
+        ${e.reason ? `<div class="award-reason">${e.reason}</div>` : ''}
       </div>`;
     });
     html += '</div></div>';
@@ -2025,19 +2034,23 @@ function openAwardModal(editId) {
       entriesHtml += `<div class="award-entry-row" data-idx="${i}">
         <input placeholder="부문" value="${e.category}" class="aw-cat">
         <input placeholder="수상자" value="${e.winner}" class="aw-win">
+        <input placeholder="상품" value="${e.prize || ''}" class="aw-prize">
+        <input placeholder="사유" value="${e.reason || ''}" class="aw-reason">
       </div>`;
     });
   } else {
     entriesHtml = `<div class="award-entry-row" data-idx="0">
       <input placeholder="부문 (예: 스코어1위)" class="aw-cat">
       <input placeholder="수상자" class="aw-win">
+      <input placeholder="상품 (예: 상품권 5만원)" class="aw-prize">
+      <input placeholder="사유 (예: 85타 최저스코어)" class="aw-reason">
     </div>`;
   }
 
   const mc = document.getElementById('modalContainer');
   mc.innerHTML = `
     <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
-      <div class="modal">
+      <div class="modal modal-lg">
         <div class="modal-header">
           <div class="modal-title">${aw ? '포상 수정' : '포상 추가'}</div>
           <button class="btn-icon" onclick="closeModal()">&times;</button>
@@ -2067,7 +2080,7 @@ function addAwardEntry() {
   const div = document.createElement('div');
   div.className = 'award-entry-row';
   div.dataset.idx = idx;
-  div.innerHTML = '<input placeholder="부문" class="aw-cat"><input placeholder="수상자" class="aw-win">';
+  div.innerHTML = '<input placeholder="부문" class="aw-cat"><input placeholder="수상자" class="aw-win"><input placeholder="상품" class="aw-prize"><input placeholder="사유" class="aw-reason">';
   container.appendChild(div);
 }
 
@@ -2077,11 +2090,20 @@ function saveAward(editId) {
 
   const cats = document.querySelectorAll('.aw-cat');
   const wins = document.querySelectorAll('.aw-win');
+  const prizes = document.querySelectorAll('.aw-prize');
+  const reasons = document.querySelectorAll('.aw-reason');
   const entries = [];
   for (let i = 0; i < cats.length; i++) {
     const c = cats[i].value.trim();
     const w = wins[i].value.trim();
-    if (c && w) entries.push({ category: c, winner: w });
+    const p = prizes[i] ? prizes[i].value.trim() : '';
+    const r = reasons[i] ? reasons[i].value.trim() : '';
+    if (c && w) {
+      const entry = { category: c, winner: w };
+      if (p) entry.prize = p;
+      if (r) entry.reason = r;
+      entries.push(entry);
+    }
   }
   if (entries.length === 0) { showToast('최소 1개 포상 항목을 입력하세요'); return; }
 
