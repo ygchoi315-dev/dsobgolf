@@ -1191,7 +1191,12 @@ function getDefaultData() {
 
 // ── Admin Mode ──
 let isAdmin = false;
-const ADMIN_PW = '7523';
+const ADMIN_PW_HASH = 'd8b4c70897b50e123d819f719db2cb5931da41e609abd572b815ddeafd6d2847';
+
+async function hashSHA256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
 
 function toggleAdmin() {
   if (isAdmin) {
@@ -1221,9 +1226,10 @@ function toggleAdmin() {
   setTimeout(() => document.getElementById('adminPwInput')?.focus(), 100);
 }
 
-function checkAdminPw() {
+async function checkAdminPw() {
   const pw = document.getElementById('adminPwInput').value;
-  if (pw === ADMIN_PW) {
+  const pwHash = await hashSHA256(pw);
+  if (pwHash === ADMIN_PW_HASH) {
     isAdmin = true;
     closeModal();
     updateAdminUI();
