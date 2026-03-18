@@ -1322,7 +1322,7 @@ async function loadDataFromSupabase() {
       console.error('Supabase load error:', error);
       return null;
     }
-    return data?.data || null;
+    return data ? { data: data.data, updatedAt: data.updated_at } : null;
   } catch(e) {
     console.error('Supabase load exception:', e);
     return null;
@@ -1338,7 +1338,7 @@ async function saveDataToSupabase() {
   try {
     const { error } = await supabaseClient
       .from('app_data')
-      .upsert({ id: 1, data: DATA, updated_at: new Date().toISOString() });
+      .upsert({ id: 1, data: DATA, updated_at: DATA.lastModified || new Date().toISOString() });
     if (error) {
       console.error('Supabase save error:', error);
       updateSyncStatus('disconnected');
@@ -1360,13 +1360,18 @@ function startPolling() {
   _pollInterval = setInterval(async () => {
     if (_savingToSupabase || !supabaseClient) return;
     try {
-      const cloudData = await loadDataFromSupabase();
-      if (cloudData && JSON.stringify(cloudData) !== JSON.stringify(DATA)) {
-        DATA = cloudData;
-        migrateData();
-        saveDataLocal();
-        renderAll();
-        showToast('최신 데이터로 업데이트되었습니다');
+      const cloudResult = await loadDataFromSupabase();
+      if (cloudResult && JSON.stringify(cloudResult.data) !== JSON.stringify(DATA)) {
+        if (shouldPreferLocal(cloudResult.updatedAt)) {
+          await saveDataToSupabase();
+          showToast('오프라인 변경사항을 서버에 업로드했습니다');
+        } else {
+          DATA = cloudResult.data;
+          migrateData();
+          saveDataLocal();
+          renderAll();
+          showToast('최신 데이터로 업데이트되었습니다');
+        }
       }
     } catch(e) {
       console.error('Polling error:', e);
@@ -1379,6 +1384,13 @@ function stopPolling() {
     clearInterval(_pollInterval);
     _pollInterval = null;
   }
+}
+
+function shouldPreferLocal(cloudUpdatedAt) {
+  var localTs = DATA.lastModified;
+  if (!localTs) return false;
+  if (!cloudUpdatedAt) return true;
+  return new Date(localTs) > new Date(cloudUpdatedAt);
 }
 
 function classifyError(e) {
@@ -1433,11 +1445,16 @@ function subscribeRealtime() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'app_data' }, function(payload) {
         var isOwnSave = _savingToSupabase || (Date.now() - _lastSaveTime < 2000);
         if (payload.new && payload.new.data && !isOwnSave) {
-          DATA = payload.new.data;
-          migrateData();
-          saveDataLocal();
-          renderAll();
-          showToast('다른 사용자가 데이터를 업데이트했습니다');
+          if (shouldPreferLocal(payload.new.updated_at)) {
+            saveDataToSupabase();
+            showToast('오프라인 변경사항을 서버에 업로드했습니다');
+          } else {
+            DATA = payload.new.data;
+            migrateData();
+            saveDataLocal();
+            renderAll();
+            showToast('다른 사용자가 데이터를 업데이트했습니다');
+          }
         }
       })
       .subscribe(function(status) {
@@ -1449,13 +1466,18 @@ function subscribeRealtime() {
           _pollInterval = setInterval(async function() {
             if (_savingToSupabase || !supabaseClient) return;
             try {
-              var cloudData = await loadDataFromSupabase();
-              if (cloudData && JSON.stringify(cloudData) !== JSON.stringify(DATA)) {
-                DATA = cloudData;
-                migrateData();
-                saveDataLocal();
-                renderAll();
-                showToast('최신 데이터로 업데이트되었습니다');
+              var cloudResult = await loadDataFromSupabase();
+              if (cloudResult && JSON.stringify(cloudResult.data) !== JSON.stringify(DATA)) {
+                if (shouldPreferLocal(cloudResult.updatedAt)) {
+                  await saveDataToSupabase();
+                  showToast('오프라인 변경사항을 서버에 업로드했습니다');
+                } else {
+                  DATA = cloudResult.data;
+                  migrateData();
+                  saveDataLocal();
+                  renderAll();
+                  showToast('최신 데이터로 업데이트되었습니다');
+                }
               }
             } catch(e) { /* ignore */ }
           }, 30000);
@@ -1531,6 +1553,7 @@ function saveDataLocal() {
 }
 
 function saveData() {
+  DATA.lastModified = new Date().toISOString();
   saveDataLocal();
   if (SUPABASE_ENABLED) {
     saveDataToSupabase();
@@ -2620,14 +2643,20 @@ function initSupabaseSync() {
   (async () => {
     try {
       updateSyncStatus('syncing');
-      const cloudData = await loadDataFromSupabase();
-      if (cloudData) {
-        DATA = cloudData;
-        migrateData();
-        saveDataLocal();
-        renderAll();
-        updateSyncStatus('connected');
-        showToast('서버에서 최신 데이터를 불러왔습니다');
+      const cloudResult = await loadDataFromSupabase();
+      if (cloudResult) {
+        if (shouldPreferLocal(cloudResult.updatedAt)) {
+          await saveDataToSupabase();
+          updateSyncStatus('connected');
+          showToast('오프라인 변경사항을 서버에 업로드했습니다');
+        } else {
+          DATA = cloudResult.data;
+          migrateData();
+          saveDataLocal();
+          renderAll();
+          updateSyncStatus('connected');
+          showToast('서버에서 최신 데이터를 불러왔습니다');
+        }
       } else {
         await saveDataToSupabase();
         updateSyncStatus('connected');
@@ -2651,13 +2680,18 @@ function initSupabaseSync() {
     document.addEventListener('visibilitychange', async () => {
       if (document.visibilityState === 'visible' && supabaseClient && !_savingToSupabase) {
         try {
-          const cloudData = await loadDataFromSupabase();
-          if (cloudData && JSON.stringify(cloudData) !== JSON.stringify(DATA)) {
-            DATA = cloudData;
-            migrateData();
-            saveDataLocal();
-            renderAll();
-            showToast('최신 데이터로 업데이트되었습니다');
+          const cloudResult = await loadDataFromSupabase();
+          if (cloudResult && JSON.stringify(cloudResult.data) !== JSON.stringify(DATA)) {
+            if (shouldPreferLocal(cloudResult.updatedAt)) {
+              await saveDataToSupabase();
+              showToast('오프라인 변경사항을 서버에 업로드했습니다');
+            } else {
+              DATA = cloudResult.data;
+              migrateData();
+              saveDataLocal();
+              renderAll();
+              showToast('최신 데이터로 업데이트되었습니다');
+            }
           }
         } catch(e) { /* ignore */ }
       }
