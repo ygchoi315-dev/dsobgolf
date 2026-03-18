@@ -784,7 +784,11 @@ tr:hover td { background: var(--green-50); }
   border-radius: 20px;
   background: rgba(255,255,255,0.1);
   margin-right: 8px;
-  cursor: default;
+  cursor: pointer;
+  user-select: none;
+}
+.sync-indicator:hover {
+  background: rgba(255,255,255,0.18);
 }
 .sync-dot {
   width: 8px;
@@ -877,7 +881,7 @@ tr:hover td { background: var(--green-50); }
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:4px;">
-      <div class="sync-indicator" id="syncIndicator" title="서버 연결 상태">
+      <div class="sync-indicator" id="syncIndicator" title="서버 연결 상태" onclick="manualReconnect()">
         <span class="sync-dot" id="syncDot"></span>
         <span id="syncText">연결 중...</span>
       </div>
@@ -1264,23 +1268,41 @@ let _savingToSupabase = false;
 let _lastSaveTime = 0;
 let _pollInterval = null;
 let _supabaseConnected = false;
+let _retryTimer = null;
+let _retryCount = 0;
+const _MAX_RETRY_COUNT = 10;
+const _RETRY_BASE_DELAY = 3000;
+let _realtimeChannel = null;
+let _lastError = '';
+let _connectionInProgress = false;
+let _visibilityListenerAdded = false;
 
-function updateSyncStatus(status) {
+function updateSyncStatus(status, message) {
   const dot = document.getElementById('syncDot');
   const text = document.getElementById('syncText');
+  const indicator = document.getElementById('syncIndicator');
   if (!dot || !text) return;
   dot.className = 'sync-dot';
   if (status === 'connected') {
     dot.classList.add('connected');
     text.textContent = '동기화됨';
     _supabaseConnected = true;
+    _retryCount = 0;
+    if (indicator) indicator.title = '서버 연결됨';
   } else if (status === 'syncing') {
     dot.classList.add('syncing');
     text.textContent = '동기화 중...';
+    if (indicator) indicator.title = message || '데이터 동기화 중...';
+  } else if (status === 'retrying') {
+    dot.classList.add('syncing');
+    text.textContent = '재연결 중(' + _retryCount + ')...';
+    _supabaseConnected = false;
+    if (indicator) indicator.title = message || '서버 재연결 시도 중...';
   } else if (status === 'disconnected') {
     dot.classList.add('disconnected');
-    text.textContent = '오프라인';
+    text.textContent = '오프라인 ↻';
     _supabaseConnected = false;
+    if (indicator) indicator.title = (message || _lastError || '서버 연결 끊김') + ' - 클릭하여 재연결';
   } else {
     text.textContent = '연결 중...';
   }
@@ -1356,6 +1378,101 @@ function stopPolling() {
   if (_pollInterval) {
     clearInterval(_pollInterval);
     _pollInterval = null;
+  }
+}
+
+function classifyError(e) {
+  const msg = (e && e.message) ? e.message.toLowerCase() : '';
+  if (msg.includes('503') || msg.includes('service unavailable') || msg.includes('project is paused')) {
+    return 'Supabase 프로젝트가 일시중지 상태입니다. supabase.com에서 프로젝트를 활성화해주세요.';
+  }
+  if (msg.includes('fetch') || msg.includes('network') || msg.includes('failed to fetch')) {
+    return '네트워크 연결을 확인해주세요.';
+  }
+  if (msg.includes('jwt') || msg.includes('401') || msg.includes('apikey')) {
+    return 'API 키가 만료되었거나 잘못되었습니다.';
+  }
+  return '서버 연결 실패: ' + (e.message || '알 수 없는 오류');
+}
+
+function scheduleRetry() {
+  if (_retryTimer) clearTimeout(_retryTimer);
+  if (_retryCount >= _MAX_RETRY_COUNT) {
+    _lastError = '최대 재시도 횟수 초과. 클릭하여 수동 재연결.';
+    updateSyncStatus('disconnected', _lastError);
+    return;
+  }
+  _retryCount++;
+  var delay = Math.min(_RETRY_BASE_DELAY * Math.pow(2, _retryCount - 1), 60000);
+  console.log('Scheduling retry #' + _retryCount + ' in ' + delay + 'ms');
+  updateSyncStatus('retrying', '재연결 시도 #' + _retryCount + ' (' + Math.round(delay/1000) + '초 후)');
+  _retryTimer = setTimeout(function() { initSupabaseSync(); }, delay);
+}
+
+function manualReconnect() {
+  if (_connectionInProgress) {
+    showToast('연결 시도 중입니다...');
+    return;
+  }
+  if (_retryTimer) clearTimeout(_retryTimer);
+  _retryCount = 0;
+  _lastError = '';
+  _connectionInProgress = false;
+  showToast('서버에 재연결 시도 중...');
+  initSupabaseSync();
+}
+
+function subscribeRealtime() {
+  try {
+    if (_realtimeChannel) {
+      supabaseClient.removeChannel(_realtimeChannel);
+      _realtimeChannel = null;
+    }
+    _realtimeChannel = supabaseClient
+      .channel('app_data_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'app_data' }, function(payload) {
+        var isOwnSave = _savingToSupabase || (Date.now() - _lastSaveTime < 2000);
+        if (payload.new && payload.new.data && !isOwnSave) {
+          DATA = payload.new.data;
+          migrateData();
+          saveDataLocal();
+          renderAll();
+          showToast('다른 사용자가 데이터를 업데이트했습니다');
+        }
+      })
+      .subscribe(function(status) {
+        console.log('Realtime subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          updateSyncStatus('connected');
+          _retryCount = 0;
+          stopPolling();
+          _pollInterval = setInterval(async function() {
+            if (_savingToSupabase || !supabaseClient) return;
+            try {
+              var cloudData = await loadDataFromSupabase();
+              if (cloudData && JSON.stringify(cloudData) !== JSON.stringify(DATA)) {
+                DATA = cloudData;
+                migrateData();
+                saveDataLocal();
+                renderAll();
+                showToast('최신 데이터로 업데이트되었습니다');
+              }
+            } catch(e) { /* ignore */ }
+          }, 30000);
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          _lastError = '실시간 연결 끊김 (' + status + ')';
+          updateSyncStatus('disconnected', _lastError);
+          stopPolling();
+          startPolling();
+          scheduleRetry();
+        }
+      });
+  } catch (e) {
+    console.error('Supabase 실시간 구독 실패:', e);
+    _lastError = '실시간 구독 오류';
+    updateSyncStatus('disconnected');
+    startPolling();
+    scheduleRetry();
   }
 }
 
@@ -2489,16 +2606,16 @@ function renderContacts() {
 loadData();
 renderAll();
 
-// Supabase 연동 초기화 (비동기 로드 대응)
-let _supabaseInitialized = false;
+// Supabase 연동 초기화 (비동기 로드 대응, 재시도 지원)
 function initSupabaseSync() {
-  if (_supabaseInitialized) return;
+  if (_connectionInProgress) return;
   tryInitSupabase();
   if (!SUPABASE_ENABLED || !supabaseClient) {
+    _lastError = 'Supabase SDK를 로드할 수 없습니다';
     updateSyncStatus('disconnected');
     return;
   }
-  _supabaseInitialized = true;
+  _connectionInProgress = true;
 
   (async () => {
     try {
@@ -2516,74 +2633,36 @@ function initSupabaseSync() {
         updateSyncStatus('connected');
         showToast('로컬 데이터를 서버에 업로드했습니다');
       }
+      subscribeRealtime();
+      _retryCount = 0;
     } catch (e) {
       console.error('Supabase 데이터 로드 실패:', e);
-      updateSyncStatus('disconnected');
+      _lastError = classifyError(e);
+      updateSyncStatus('disconnected', _lastError);
+      scheduleRetry();
+    } finally {
+      _connectionInProgress = false;
     }
   })();
 
-  // 실시간 구독 + 상태 모니터링
-  try {
-    supabaseClient
-      .channel('app_data_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'app_data' }, (payload) => {
-        // _savingToSupabase가 true여도 2초 이상 지난 이벤트는 다른 사용자의 변경으로 간주
-        const isOwnSave = _savingToSupabase || (Date.now() - _lastSaveTime < 2000);
-        if (payload.new && payload.new.data && !isOwnSave) {
-          DATA = payload.new.data;
-          migrateData();
-          saveDataLocal();
-          renderAll();
-          showToast('다른 사용자가 데이터를 업데이트했습니다');
-        }
-      })
-      .subscribe((status) => {
-        console.log('Realtime subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          updateSyncStatus('connected');
-          // Realtime 연결 성공 시 폴링은 30초로 늦춤 (백업용)
-          stopPolling();
-          _pollInterval = setInterval(async () => {
-            if (_savingToSupabase || !supabaseClient) return;
-            try {
-              const cloudData = await loadDataFromSupabase();
-              if (cloudData && JSON.stringify(cloudData) !== JSON.stringify(DATA)) {
-                DATA = cloudData;
-                migrateData();
-                saveDataLocal();
-                renderAll();
-                showToast('최신 데이터로 업데이트되었습니다');
-              }
-            } catch(e) { /* ignore */ }
-          }, 30000);
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-          updateSyncStatus('disconnected');
-          // Realtime 실패 시 10초 폴링으로 전환
-          stopPolling();
-          startPolling();
-        }
-      });
-  } catch (e) {
-    console.error('Supabase 실시간 구독 실패:', e);
-    updateSyncStatus('disconnected');
-    startPolling();
+  // 페이지 포커스 시 최신 데이터 동기화 (리스너 중복 방지)
+  if (!_visibilityListenerAdded) {
+    _visibilityListenerAdded = true;
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState === 'visible' && supabaseClient && !_savingToSupabase) {
+        try {
+          const cloudData = await loadDataFromSupabase();
+          if (cloudData && JSON.stringify(cloudData) !== JSON.stringify(DATA)) {
+            DATA = cloudData;
+            migrateData();
+            saveDataLocal();
+            renderAll();
+            showToast('최신 데이터로 업데이트되었습니다');
+          }
+        } catch(e) { /* ignore */ }
+      }
+    });
   }
-
-  // 페이지 포커스 시 최신 데이터 동기화
-  document.addEventListener('visibilitychange', async () => {
-    if (document.visibilityState === 'visible' && supabaseClient && !_savingToSupabase) {
-      try {
-        const cloudData = await loadDataFromSupabase();
-        if (cloudData && JSON.stringify(cloudData) !== JSON.stringify(DATA)) {
-          DATA = cloudData;
-          migrateData();
-          saveDataLocal();
-          renderAll();
-          showToast('최신 데이터로 업데이트되었습니다');
-        }
-      } catch(e) { /* ignore */ }
-    }
-  });
 }
 
 // Supabase가 이미 로드되었으면 즉시 초기화, 아니면 비동기 로드 후 초기화
