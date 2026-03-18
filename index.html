@@ -1128,21 +1128,28 @@ function switchPage(item) {
 const STORAGE_KEY = 'dsob_golf_data';
 const DATA_VERSION = 9;
 
-// ── Supabase Configuration ──
-const SUPABASE_URL = 'https://ykzsovhvrsafefbtmwou.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrenNvdmh2cnNhZmVmYnRtd291Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NDUzODksImV4cCI6MjA4NzQyMTM4OX0.57BFyuwfJctRLC3_ezxjXMj68LEJe3ezqZWDCg-gzB8';
-const SUPABASE_ENABLED = SUPABASE_URL !== 'YOUR_SUPABASE_URL';
+// ── Firebase Configuration ──
+// Firebase 설정 방법: firebase_setup_guide.md 참조
+// https://console.firebase.google.com/ 에서 프로젝트 생성 후 아래 값을 입력하세요.
+const FIREBASE_CONFIG = {
+  apiKey: "YOUR_FIREBASE_API_KEY",
+  databaseURL: "YOUR_FIREBASE_DATABASE_URL"
+};
+const FIREBASE_ENABLED = FIREBASE_CONFIG.databaseURL !== 'YOUR_FIREBASE_DATABASE_URL';
 
-var supabaseClient = null;
-function tryInitSupabase() {
-  if (supabaseClient || !SUPABASE_ENABLED || !window.supabase) return;
+var firebaseDB = null;
+function tryInitFirebase() {
+  if (firebaseDB || !FIREBASE_ENABLED || !window.firebase) return;
   try {
-    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    if (!firebase.apps.length) {
+      firebase.initializeApp(FIREBASE_CONFIG);
+    }
+    firebaseDB = firebase.database();
   } catch (e) {
-    console.error('Supabase 연결 실패:', e);
+    console.error('Firebase 연결 실패:', e);
   }
 }
-tryInitSupabase();
+tryInitFirebase();
 
 // ── Member colors for avatars ──
 const COLORS = ['#2d6147','#378056','#45a068','#6bc088','#c8a84e','#d4b962','#1a3a2a','#234d38','#3b82f6','#d94452','#8b6914','#2563eb','#059669','#d97706','#7c3aed'];
@@ -1264,15 +1271,15 @@ function updateAdminUI() {
 
 // ── Data Management ──
 let DATA;
-let _savingToSupabase = false;
+let _savingToFirebase = false;
 let _lastSaveTime = 0;
 let _pollInterval = null;
-let _supabaseConnected = false;
+let _firebaseConnected = false;
 let _retryTimer = null;
 let _retryCount = 0;
 const _MAX_RETRY_COUNT = 10;
 const _RETRY_BASE_DELAY = 3000;
-let _realtimeChannel = null;
+let _firebaseListener = null;
 let _lastError = '';
 let _connectionInProgress = false;
 let _visibilityListenerAdded = false;
@@ -1286,7 +1293,7 @@ function updateSyncStatus(status, message) {
   if (status === 'connected') {
     dot.classList.add('connected');
     text.textContent = '동기화됨';
-    _supabaseConnected = true;
+    _firebaseConnected = true;
     _retryCount = 0;
     if (indicator) indicator.title = '서버 연결됨';
   } else if (status === 'syncing') {
@@ -1296,61 +1303,50 @@ function updateSyncStatus(status, message) {
   } else if (status === 'retrying') {
     dot.classList.add('syncing');
     text.textContent = '재연결 중(' + _retryCount + ')...';
-    _supabaseConnected = false;
+    _firebaseConnected = false;
     if (indicator) indicator.title = message || '서버 재연결 시도 중...';
   } else if (status === 'disconnected') {
     dot.classList.add('disconnected');
     text.textContent = '오프라인 ↻';
-    _supabaseConnected = false;
+    _firebaseConnected = false;
     if (indicator) indicator.title = (message || _lastError || '서버 연결 끊김') + ' - 클릭하여 재연결';
   } else {
     text.textContent = '연결 중...';
   }
 }
 
-// Supabase에서 데이터 불러오기 (비동기)
-async function loadDataFromSupabase() {
-  if (!supabaseClient) return null;
+// Firebase에서 데이터 불러오기 (비동기)
+async function loadDataFromFirebase() {
+  if (!firebaseDB) return null;
   try {
-    const { data, error } = await supabaseClient
-      .from('app_data')
-      .select('data, updated_at')
-      .eq('id', 1)
-      .single();
-    if (error) {
-      if (error.code === 'PGRST116') return null; // row not found
-      console.error('Supabase load error:', error);
-      return null;
-    }
-    return data ? { data: data.data, updatedAt: data.updated_at } : null;
+    var snapshot = await firebaseDB.ref('app_data').once('value');
+    var val = snapshot.val();
+    if (!val) return null;
+    return { data: val.data, updatedAt: val.updated_at };
   } catch(e) {
-    console.error('Supabase load exception:', e);
+    console.error('Firebase load exception:', e);
     return null;
   }
 }
 
-// Supabase에 데이터 저장 (비동기)
-async function saveDataToSupabase() {
-  if (!supabaseClient || _savingToSupabase) return;
-  _savingToSupabase = true;
+// Firebase에 데이터 저장 (비동기)
+async function saveDataToFirebase() {
+  if (!firebaseDB || _savingToFirebase) return;
+  _savingToFirebase = true;
   _lastSaveTime = Date.now();
   updateSyncStatus('syncing');
   try {
-    const { error } = await supabaseClient
-      .from('app_data')
-      .upsert({ id: 1, data: DATA, updated_at: DATA.lastModified || new Date().toISOString() });
-    if (error) {
-      console.error('Supabase save error:', error);
-      updateSyncStatus('disconnected');
-      showToast('서버 저장 실패. 로컬에만 저장됨.');
-    } else {
-      updateSyncStatus('connected');
-    }
+    await firebaseDB.ref('app_data').set({
+      data: DATA,
+      updated_at: DATA.lastModified || new Date().toISOString()
+    });
+    updateSyncStatus('connected');
   } catch(e) {
-    console.error('Supabase save exception:', e);
+    console.error('Firebase save error:', e);
     updateSyncStatus('disconnected');
+    showToast('서버 저장 실패. 로컬에만 저장됨.');
   } finally {
-    _savingToSupabase = false;
+    _savingToFirebase = false;
   }
 }
 
@@ -1358,12 +1354,12 @@ async function saveDataToSupabase() {
 function startPolling() {
   if (_pollInterval) return;
   _pollInterval = setInterval(async () => {
-    if (_savingToSupabase || !supabaseClient) return;
+    if (_savingToFirebase || !firebaseDB) return;
     try {
-      const cloudResult = await loadDataFromSupabase();
+      const cloudResult = await loadDataFromFirebase();
       if (cloudResult && JSON.stringify(cloudResult.data) !== JSON.stringify(DATA)) {
         if (shouldPreferLocal(cloudResult.updatedAt)) {
-          await saveDataToSupabase();
+          await saveDataToFirebase();
           showToast('오프라인 변경사항을 서버에 업로드했습니다');
         } else {
           DATA = cloudResult.data;
@@ -1395,13 +1391,13 @@ function shouldPreferLocal(cloudUpdatedAt) {
 
 function classifyError(e) {
   const msg = (e && e.message) ? e.message.toLowerCase() : '';
-  if (msg.includes('503') || msg.includes('service unavailable') || msg.includes('project is paused')) {
-    return 'Supabase 프로젝트가 일시중지 상태입니다. supabase.com에서 프로젝트를 활성화해주세요.';
+  if (msg.includes('permission_denied') || msg.includes('permission denied')) {
+    return 'Firebase 보안 규칙에 의해 접근이 거부되었습니다. Firebase Console에서 규칙을 확인하세요.';
   }
   if (msg.includes('fetch') || msg.includes('network') || msg.includes('failed to fetch')) {
     return '네트워크 연결을 확인해주세요.';
   }
-  if (msg.includes('jwt') || msg.includes('401') || msg.includes('apikey')) {
+  if (msg.includes('auth') || msg.includes('401') || msg.includes('apikey')) {
     return 'API 키가 만료되었거나 잘못되었습니다.';
   }
   return '서버 연결 실패: ' + (e.message || '알 수 없는 오류');
@@ -1418,7 +1414,7 @@ function scheduleRetry() {
   var delay = Math.min(_RETRY_BASE_DELAY * Math.pow(2, _retryCount - 1), 60000);
   console.log('Scheduling retry #' + _retryCount + ' in ' + delay + 'ms');
   updateSyncStatus('retrying', '재연결 시도 #' + _retryCount + ' (' + Math.round(delay/1000) + '초 후)');
-  _retryTimer = setTimeout(function() { initSupabaseSync(); }, delay);
+  _retryTimer = setTimeout(function() { initFirebaseSync(); }, delay);
 }
 
 function manualReconnect() {
@@ -1431,66 +1427,53 @@ function manualReconnect() {
   _lastError = '';
   _connectionInProgress = false;
   showToast('서버에 재연결 시도 중...');
-  initSupabaseSync();
+  initFirebaseSync();
 }
 
 function subscribeRealtime() {
   try {
-    if (_realtimeChannel) {
-      supabaseClient.removeChannel(_realtimeChannel);
-      _realtimeChannel = null;
+    // Remove old listener if exists
+    if (_firebaseListener) {
+      firebaseDB.ref('app_data').off('value', _firebaseListener);
+      _firebaseListener = null;
     }
-    _realtimeChannel = supabaseClient
-      .channel('app_data_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'app_data' }, function(payload) {
-        var isOwnSave = _savingToSupabase || (Date.now() - _lastSaveTime < 2000);
-        if (payload.new && payload.new.data && !isOwnSave) {
-          if (shouldPreferLocal(payload.new.updated_at)) {
-            saveDataToSupabase();
-            showToast('오프라인 변경사항을 서버에 업로드했습니다');
-          } else {
-            DATA = payload.new.data;
-            migrateData();
-            saveDataLocal();
-            renderAll();
-            showToast('다른 사용자가 데이터를 업데이트했습니다');
-          }
+
+    // Realtime data listener
+    _firebaseListener = firebaseDB.ref('app_data').on('value', function(snapshot) {
+      var val = snapshot.val();
+      var isOwnSave = _savingToFirebase || (Date.now() - _lastSaveTime < 2000);
+      if (val && val.data && !isOwnSave) {
+        if (shouldPreferLocal(val.updated_at)) {
+          saveDataToFirebase();
+          showToast('오프라인 변경사항을 서버에 업로드했습니다');
+        } else if (JSON.stringify(val.data) !== JSON.stringify(DATA)) {
+          DATA = val.data;
+          migrateData();
+          saveDataLocal();
+          renderAll();
+          showToast('다른 사용자가 데이터를 업데이트했습니다');
         }
-      })
-      .subscribe(function(status) {
-        console.log('Realtime subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          updateSyncStatus('connected');
-          _retryCount = 0;
-          stopPolling();
-          _pollInterval = setInterval(async function() {
-            if (_savingToSupabase || !supabaseClient) return;
-            try {
-              var cloudResult = await loadDataFromSupabase();
-              if (cloudResult && JSON.stringify(cloudResult.data) !== JSON.stringify(DATA)) {
-                if (shouldPreferLocal(cloudResult.updatedAt)) {
-                  await saveDataToSupabase();
-                  showToast('오프라인 변경사항을 서버에 업로드했습니다');
-                } else {
-                  DATA = cloudResult.data;
-                  migrateData();
-                  saveDataLocal();
-                  renderAll();
-                  showToast('최신 데이터로 업데이트되었습니다');
-                }
-              }
-            } catch(e) { /* ignore */ }
-          }, 30000);
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-          _lastError = '실시간 연결 끊김 (' + status + ')';
-          updateSyncStatus('disconnected', _lastError);
-          stopPolling();
-          startPolling();
-          scheduleRetry();
-        }
-      });
+      }
+    }, function(error) {
+      console.error('Firebase realtime error:', error);
+      _lastError = '실시간 연결 오류: ' + error.message;
+      updateSyncStatus('disconnected', _lastError);
+      scheduleRetry();
+    });
+
+    // Monitor connection state using Firebase built-in .info/connected
+    firebaseDB.ref('.info/connected').on('value', function(snap) {
+      if (snap.val() === true) {
+        updateSyncStatus('connected');
+        _retryCount = 0;
+        stopPolling();
+      } else {
+        updateSyncStatus('disconnected');
+        startPolling();
+      }
+    });
   } catch (e) {
-    console.error('Supabase 실시간 구독 실패:', e);
+    console.error('Firebase 실시간 구독 실패:', e);
     _lastError = '실시간 구독 오류';
     updateSyncStatus('disconnected');
     startPolling();
@@ -1555,8 +1538,8 @@ function saveDataLocal() {
 function saveData() {
   DATA.lastModified = new Date().toISOString();
   saveDataLocal();
-  if (SUPABASE_ENABLED) {
-    saveDataToSupabase();
+  if (FIREBASE_ENABLED) {
+    saveDataToFirebase();
   }
 }
 
@@ -2629,12 +2612,12 @@ function renderContacts() {
 loadData();
 renderAll();
 
-// Supabase 연동 초기화 (비동기 로드 대응, 재시도 지원)
-function initSupabaseSync() {
+// Firebase 연동 초기화 (비동기 로드 대응, 재시도 지원)
+function initFirebaseSync() {
   if (_connectionInProgress) return;
-  tryInitSupabase();
-  if (!SUPABASE_ENABLED || !supabaseClient) {
-    _lastError = 'Supabase SDK를 로드할 수 없습니다';
+  tryInitFirebase();
+  if (!FIREBASE_ENABLED || !firebaseDB) {
+    _lastError = 'Firebase SDK를 로드할 수 없습니다';
     updateSyncStatus('disconnected');
     return;
   }
@@ -2643,10 +2626,10 @@ function initSupabaseSync() {
   (async () => {
     try {
       updateSyncStatus('syncing');
-      const cloudResult = await loadDataFromSupabase();
+      const cloudResult = await loadDataFromFirebase();
       if (cloudResult) {
         if (shouldPreferLocal(cloudResult.updatedAt)) {
-          await saveDataToSupabase();
+          await saveDataToFirebase();
           updateSyncStatus('connected');
           showToast('오프라인 변경사항을 서버에 업로드했습니다');
         } else {
@@ -2658,14 +2641,14 @@ function initSupabaseSync() {
           showToast('서버에서 최신 데이터를 불러왔습니다');
         }
       } else {
-        await saveDataToSupabase();
+        await saveDataToFirebase();
         updateSyncStatus('connected');
         showToast('로컬 데이터를 서버에 업로드했습니다');
       }
       subscribeRealtime();
       _retryCount = 0;
     } catch (e) {
-      console.error('Supabase 데이터 로드 실패:', e);
+      console.error('Firebase 데이터 로드 실패:', e);
       _lastError = classifyError(e);
       updateSyncStatus('disconnected', _lastError);
       scheduleRetry();
@@ -2678,12 +2661,12 @@ function initSupabaseSync() {
   if (!_visibilityListenerAdded) {
     _visibilityListenerAdded = true;
     document.addEventListener('visibilitychange', async () => {
-      if (document.visibilityState === 'visible' && supabaseClient && !_savingToSupabase) {
+      if (document.visibilityState === 'visible' && firebaseDB && !_savingToFirebase) {
         try {
-          const cloudResult = await loadDataFromSupabase();
+          const cloudResult = await loadDataFromFirebase();
           if (cloudResult && JSON.stringify(cloudResult.data) !== JSON.stringify(DATA)) {
             if (shouldPreferLocal(cloudResult.updatedAt)) {
-              await saveDataToSupabase();
+              await saveDataToFirebase();
               showToast('오프라인 변경사항을 서버에 업로드했습니다');
             } else {
               DATA = cloudResult.data;
@@ -2699,12 +2682,13 @@ function initSupabaseSync() {
   }
 }
 
-// Supabase가 이미 로드되었으면 즉시 초기화, 아니면 비동기 로드 후 초기화
-if (window.supabase) {
-  initSupabaseSync();
+// Firebase가 이미 로드되었으면 즉시 초기화, 아니면 비동기 로드 후 초기화
+if (window.firebase) {
+  initFirebaseSync();
 }
 </script>
-<!-- Supabase SDK: async 로드로 페이지 렌더링 차단 방지 -->
-<script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onload="if(typeof initSupabaseSync==='function')initSupabaseSync()"></script>
+<!-- Firebase SDK: async 로드로 페이지 렌더링 차단 방지 -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script async src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js" onload="if(typeof initFirebaseSync==='function')initFirebaseSync()"></script>
 </body>
 </html>
