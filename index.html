@@ -1286,6 +1286,7 @@ let _connectedListener = null;
 let _lastError = '';
 let _connectionInProgress = false;
 let _visibilityListenerAdded = false;
+let _disconnectTimer = null;
 
 function updateSyncStatus(status, message) {
   const dot = document.getElementById('syncDot');
@@ -1426,11 +1427,20 @@ function manualReconnect() {
     return;
   }
   if (_retryTimer) clearTimeout(_retryTimer);
+  if (_disconnectTimer) {
+    clearTimeout(_disconnectTimer);
+    _disconnectTimer = null;
+  }
   _retryCount = 0;
   _lastError = '';
+  // Clean up all listeners so initFirebaseSync can start fresh
   if (_connectedListener) {
     firebaseDB.ref('.info/connected').off('value', _connectedListener);
     _connectedListener = null;
+  }
+  if (_firebaseListener) {
+    firebaseDB.ref('app_data').off('value', _firebaseListener);
+    _firebaseListener = null;
   }
   _connectionInProgress = false;
   showToast('서버에 재연결 시도 중...');
@@ -1439,16 +1449,18 @@ function manualReconnect() {
 
 function subscribeRealtime() {
   try {
-    // Remove old data listener if exists
+    // Remove old listeners
     if (_firebaseListener) {
       firebaseDB.ref('app_data').off('value', _firebaseListener);
       _firebaseListener = null;
     }
-
-    // Remove old .info/connected listener if exists
     if (_connectedListener) {
       firebaseDB.ref('.info/connected').off('value', _connectedListener);
       _connectedListener = null;
+    }
+    if (_disconnectTimer) {
+      clearTimeout(_disconnectTimer);
+      _disconnectTimer = null;
     }
 
     // Realtime data listener
@@ -1470,35 +1482,37 @@ function subscribeRealtime() {
     }, function(error) {
       console.error('Firebase realtime error:', error);
       _lastError = '실시간 연결 오류: ' + error.message;
-      updateSyncStatus('disconnected', _lastError);
-      scheduleRetry();
+      // Firebase SDK auto-reconnects - just use polling as fallback
+      startPolling();
     });
 
-    // Monitor connection state using Firebase built-in .info/connected
-    // Skip initial false value that Firebase always emits before WebSocket handshake
-    var isFirstEvent = true;
+    // Connection state monitor with grace period
+    // Firebase .info/connected can briefly flicker false on tab switch,
+    // network hiccups, or socket renegotiation. Wait 2s before reacting.
     _connectedListener = firebaseDB.ref('.info/connected').on('value', function(snap) {
       if (snap.val() === true) {
-        isFirstEvent = false;
+        // Connected - cancel any pending disconnect timer
+        if (_disconnectTimer) {
+          clearTimeout(_disconnectTimer);
+          _disconnectTimer = null;
+        }
         updateSyncStatus('connected');
         _retryCount = 0;
         stopPolling();
       } else {
-        if (isFirstEvent) {
-          isFirstEvent = false;
-          return;
+        // false received - start grace period, don't react immediately
+        if (!_disconnectTimer) {
+          _disconnectTimer = setTimeout(function() {
+            _disconnectTimer = null;
+            // false persisted for 2s - actually disconnected
+            startPolling();
+          }, 2000);
         }
-        updateSyncStatus('disconnected');
-        startPolling();
-        scheduleRetry();
       }
     });
   } catch (e) {
     console.error('Firebase 실시간 구독 실패:', e);
-    _lastError = '실시간 구독 오류';
-    updateSyncStatus('disconnected');
     startPolling();
-    scheduleRetry();
   }
 }
 
@@ -2666,12 +2680,16 @@ function initFirebaseSync() {
         updateSyncStatus('connected');
         showToast('로컬 데이터를 서버에 업로드했습니다');
       }
-      subscribeRealtime();
+      // Only subscribe if not already listening (prevent duplicate listeners on retry)
+      if (!_firebaseListener) {
+        subscribeRealtime();
+      }
       _retryCount = 0;
     } catch (e) {
       console.error('Firebase 데이터 로드 실패:', e);
       _lastError = classifyError(e);
       updateSyncStatus('disconnected', _lastError);
+      // Only retry for initial data load failures, not for WebSocket issues
       scheduleRetry();
     } finally {
       _connectionInProgress = false;
