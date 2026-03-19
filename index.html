@@ -1323,13 +1323,19 @@ function updateSyncStatus(status, message) {
 async function loadDataFromFirebase() {
   if (!firebaseDB) return null;
   try {
-    var snapshot = await firebaseDB.ref('app_data').once('value');
+    var timeoutPromise = new Promise(function(_, reject) {
+      setTimeout(function() { reject(new Error('Firebase load timeout')); }, 10000);
+    });
+    var snapshot = await Promise.race([
+      firebaseDB.ref('app_data').once('value'),
+      timeoutPromise
+    ]);
     var val = snapshot.val();
     if (!val) return null;
     return { data: val.data, updatedAt: val.updated_at };
   } catch(e) {
     console.error('Firebase load exception:', e);
-    return null;
+    throw e;
   }
 }
 
@@ -1340,10 +1346,16 @@ async function saveDataToFirebase() {
   _lastSaveTime = Date.now();
   updateSyncStatus('syncing');
   try {
-    await firebaseDB.ref('app_data').set({
-      data: DATA,
-      updated_at: DATA.lastModified || new Date().toISOString()
+    var timeoutPromise = new Promise(function(_, reject) {
+      setTimeout(function() { reject(new Error('Firebase save timeout')); }, 10000);
     });
+    await Promise.race([
+      firebaseDB.ref('app_data').set({
+        data: DATA,
+        updated_at: DATA.lastModified || new Date().toISOString()
+      }),
+      timeoutPromise
+    ]);
     updateSyncStatus('connected');
   } catch(e) {
     console.error('Firebase save error:', e);
@@ -1412,6 +1424,9 @@ function scheduleRetry() {
   if (_retryCount >= _MAX_RETRY_COUNT) {
     _lastError = '최대 재시도 횟수 초과. 클릭하여 수동 재연결.';
     updateSyncStatus('disconnected', _lastError);
+    if (firebaseDB) {
+      try { firebase.database().goOffline(); } catch(e) {}
+    }
     return;
   }
   _retryCount++;
@@ -1444,7 +1459,20 @@ function manualReconnect() {
   }
   _connectionInProgress = false;
   showToast('서버에 재연결 시도 중...');
-  initFirebaseSync();
+  if (firebaseDB) {
+    try {
+      firebase.database().goOffline();
+      setTimeout(function() {
+        firebase.database().goOnline();
+        initFirebaseSync();
+      }, 500);
+    } catch(e) {
+      console.error('goOffline/goOnline error:', e);
+      initFirebaseSync();
+    }
+  } else {
+    initFirebaseSync();
+  }
 }
 
 function subscribeRealtime() {
@@ -1505,6 +1533,7 @@ function subscribeRealtime() {
           _disconnectTimer = setTimeout(function() {
             _disconnectTimer = null;
             // false persisted for 2s - actually disconnected
+            updateSyncStatus('disconnected');
             startPolling();
           }, 2000);
         }
@@ -2657,6 +2686,12 @@ function initFirebaseSync() {
     return;
   }
   _connectionInProgress = true;
+  var connectionSafetyTimer = setTimeout(function() {
+    if (_connectionInProgress) {
+      console.warn('Connection attempt safety timeout - resetting flag');
+      _connectionInProgress = false;
+    }
+  }, 15000);
 
   (async () => {
     try {
@@ -2692,6 +2727,7 @@ function initFirebaseSync() {
       // Only retry for initial data load failures, not for WebSocket issues
       scheduleRetry();
     } finally {
+      clearTimeout(connectionSafetyTimer);
       _connectionInProgress = false;
     }
   })();
