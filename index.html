@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DS OB Golf 2026</title>
+<style>
+:root{
+  --bg:#f6f7f5;--card:#fff;--line:#e3e6e1;--text:#1d2420;--muted:#6b756f;
+  --green:#2d6a4f;--green-soft:#e6f2ec;--gold:#b8892b;--red:#c0392b;--blue:#2c5d8f;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif}
+header{background:var(--green);color:#fff;padding:14px 16px 0}
+header h1{margin:0;font-size:18px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+#sync{font-size:12px;font-weight:400;opacity:.9;white-space:nowrap}
+#sync::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:#aaa}
+#sync.on::before{background:#5fdc8f}#sync.off::before{background:#f0b44c}
+nav{display:flex;gap:2px;margin-top:10px;overflow-x:auto}
+nav button{background:none;border:0;color:#cfe5d9;padding:9px 12px;font-size:14px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+nav button.on{color:#fff;border-bottom-color:#f2d27a;font-weight:600}
+main{max-width:1100px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px}
+.card h2{font-size:15px;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.muted{color:var(--muted);font-size:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
+.kpi b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;white-space:nowrap}
+th{background:#f1f3f0;font-weight:600;font-size:13px}
+td.n,th.n{text-align:right}
+tr.sub td{background:#f7f9f6;font-weight:600}
+input,select{font:inherit;padding:5px 7px;border:1px solid #cdd3cc;border-radius:6px;background:#fff;color:var(--text);min-width:0}
+input.num{width:72px;text-align:right}
+input.wide{width:100%}
+button.b{font:inherit;padding:6px 12px;border-radius:6px;border:1px solid var(--green);background:var(--green);color:#fff;cursor:pointer}
+button.b.ghost{background:#fff;color:var(--green)}
+button.x{border:0;background:none;color:var(--red);cursor:pointer;font-size:16px;padding:2px 6px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:16px;padding:5px 12px;cursor:pointer;font-size:13px}
+.chip.on{background:var(--green);border-color:var(--green);color:#fff}
+.tag{display:inline-block;font-size:11px;padding:1px 6px;border-radius:8px;background:var(--green-soft);color:var(--green);margin-left:4px}
+.tag.g{background:#fbf1dc;color:var(--gold)}
+.up{color:var(--blue)}.dn{color:var(--red)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}main{padding:12px}}
+.mx td{text-align:center;min-width:34px}
+.mx th{text-align:center}
+.hint{background:#fbf8ee;border:1px solid #efe2bb;border-radius:8px;padding:8px 10px;font-size:13px;margin-top:8px}
+</style>
+</head>
+<body>
+<header>
+  <h1>DS OB Golf 2026 <span id="sync" class="off">로컬 저장</span></h1>
+  <nav id="tabs">
+    <button data-tab="rounds" class="on">라운드</button>
+    <button data-tab="scores">스코어</button>
+    <button data-tab="mates">동반자</button>
+    <button data-tab="money">재정</button>
+    <button data-tab="members">멤버·설정</button>
+  </nav>
+</header>
+<main id="app"></main>
+
+<script>
+/* ===================== 초기 데이터 (2026 엑셀 기록) ===================== */
+const SEED = {
+  version: 1,
+  headcount: 12,
+  members: [
+    {name:"윤준원",best:94,bestNote:"26.6월"},{name:"김창진",best:94,bestNote:""},
+    {name:"박인혁",best:95,bestNote:"26.7월"},{name:"배현준",best:81,bestNote:""},
+    {name:"승용수",best:87,bestNote:""},{name:"이강진",best:83,bestNote:""},
+    {name:"이성재",best:80,bestNote:""},{name:"이재국",best:92,bestNote:"26.10월"},
+    {name:"이지훈",best:81,bestNote:"26.9월"},{name:"장민구",best:82,bestNote:"26.9월"},
+    {name:"전형건",best:87,bestNote:"26.9월"},{name:"최영근",best:82,bestNote:"26.6월"},
+    {name:"최기성",best:95,bestNote:"26.10월"}
+  ],
+  rounds: [
+    {date:"2026-03-19",course:"남코스",note:"",
+     groups:[{time:"12:37",players:["이성재","승용수","장민구","박인혁"]},{time:"12:44",players:["이강진","최영근","전형건","최기성"]},{time:"12:51",players:["홍석환","배현준","이재국","윤준원"]}],
+     scores:{"박인혁":98,"배현준":87,"승용수":90,"윤준원":102,"이강진":84,"이성재":88,"이재국":107,"장민구":90,"전형건":93,"최영근":87,"최기성":107},
+     awards:[
+      {title:"전체에서 제일 잘친사람",prize:"쌀",winners:["이강진"]},
+      {title:"전월 누적 평균 대비 제일 개선",prize:"과일",winners:["장민구"]},
+      {title:"12명 그린피 5만원씩 지원(60만원)",prize:"",winners:[]},
+      {title:"행운상 2명",prize:"공",winners:["이재국","승용수"]},
+      {title:"라베 갱신",prize:"공",winners:[]},
+      {title:"각 카트 1위",prize:"공",winners:["이성재","최영근","배현준"]},
+      {title:"애니골상",prize:"과일",winners:["홍석환"]},
+      {title:"기타(태광 타이틀공 2개)",prize:"공",winners:["홍석환","최기성"]},
+      {title:"1등카트 12만원(인당 3만원)",prize:"",winners:["이성재","장민구","승용수","박인혁"]}]},
+    {date:"2026-04-16",course:"서코스",note:"팀전: 팀 재국(영근·성재·민구·지훈·인혁) vs 팀 기성(강진·현준·용수·형건·준원) → 팀 재국 승",
+     groups:[{time:"12:46",players:["장민구","이지훈","승용수","이강진"]},{time:"12:53",players:["이성재","박인혁","배현준","윤준원"]},{time:"13:00",players:["이재국","최영근","전형건","최기성"]}],
+     scores:{"박인혁":103,"배현준":97,"승용수":93,"윤준원":103,"이강진":89,"이성재":81,"이재국":108,"이지훈":92,"장민구":88,"전형건":93,"최영근":94,"최기성":107},
+     awards:[
+      {title:"전체에서 제일 잘친사람",prize:"쌀",winners:["이성재"]},
+      {title:"전월 누적 평균 대비 제일 개선",prize:"과일",winners:["장민구"]},
+      {title:"12명 그린피 5만원씩 지원(60만원)",prize:"",winners:[]},
+      {title:"행운상 2명",prize:"공",winners:["승용수","배현준"]},
+      {title:"라베 갱신",prize:"공",winners:[]},
+      {title:"우승팀 6명",prize:"8만원 상당 프로샵 개별 구매",winners:["이재국","최영근","이성재","장민구","이지훈","박인혁"]}]},
+    {date:"2026-05-21",course:"북코스",note:"",
+     groups:[{time:"12:04",players:["최영근","장민구","이강진","승용수"]},{time:"12:11",players:["이지훈","전형건","윤준원","홍석환"]},{time:"12:25",players:["이성재","이재국","최기성","박인혁"]}],
+     scores:{"박인혁":105,"승용수":99,"윤준원":106,"이강진":87,"이성재":81,"이재국":109,"이지훈":84,"장민구":97,"전형건":89,"최영근":84,"최기성":109},
+     awards:[
+      {title:"전체에서 제일 잘친사람",prize:"쌀",winners:["이성재"]},
+      {title:"전월 누적 평균 대비 제일 개선",prize:"과일",winners:["이지훈"]},
+      {title:"12명 그린피 5만원씩 지원(60만원)",prize:"",winners:[]},
+      {title:"행운상 4명",prize:"공",winners:["최기성","박인혁","홍석환","최영근"]},
+      {title:"라베 갱신",prize:"과일",winners:[]},
+      {title:"다 보기상",prize:"과일",winners:["전형건"]},
+      {title:"다 더블상",prize:"과일",winners:["윤준원"]},
+      {title:"신페리오 1위",prize:"과일",winners:["이강진"]}]},
+    {date:"2026-06-18",course:"남코스",note:"라이벌전: 민구-준원(준원 핸디 10타), 인혁-석환, 용수-재국(재국 핸디 10타), 형건-영근, 강진-성재, 지훈-현준",
+     groups:[{time:"12:32",players:["최영근","전형건","윤준원","장민구"]},{time:"12:39",players:["이지훈","배현준","박인혁","홍석환"]},{time:"12:46",players:["이재국","승용수","이강진","이성재"]}],
+     scores:{},
+     awards:[
+      {title:"전체에서 제일 잘친사람",prize:"쌀",winners:["이성재"]},
+      {title:"전월 누적 평균 대비 제일 개선",prize:"과일",winners:["배현준"]},
+      {title:"12명 그린피 5만원씩 지원(60만원)",prize:"",winners:[]},
+      {title:"행운상 2명",prize:"공",winners:["박인혁","전형건"]},
+      {title:"라베 갱신",prize:"과일",winners:["최영근","윤준원"]},
+      {title:"라이벌전 승리자 6명",prize:"인당 8만원",winners:["윤준원","승용수","최영근","이성재","배현준","홍석환"]},
+      {title:"다 보기상",prize:"공",winners:["홍석환"]},
+      {title:"다 더블상",prize:"공",winners:["이지훈"]},
+      {title:"다 트리플상",prize:"공",winners:[]}]},
+    {date:"2026-07-16",course:"서코스",note:"1등조 12만원 한도, 2등조 6만원 한도 내 물품 구매",
+     groups:[{time:"12:06",players:["최영근","이강진","이성재","배현준"]},{time:"12:13",players:["전형건","장민구","승용수","홍석환"]},{time:"12:27",players:["박인혁","최기성","윤준원","이희진"]}],
+     scores:{},
+     awards:[
+      {title:"전체에서 제일 잘친사람",prize:"쌀",winners:["이강진"]},
+      {title:"전월 누적 평균 대비 제일 개선",prize:"과일",winners:["윤준원"]},
+      {title:"12명 그린피 5만원씩 지원(60만원)",prize:"",winners:[]},
+      {title:"행운상 2명(랜덤 사다리타기)",prize:"공",winners:["최영근","홍석환"]},
+      {title:"라베 갱신",prize:"과일",winners:["박인혁"]},
+      {title:"다 버디상",prize:"공",winners:["배현준"]},
+      {title:"다 파상",prize:"공",winners:["장민구"]},
+      {title:"다 보기상",prize:"공",winners:["이성재"]},
+      {title:"다 더블상",prize:"공",winners:["전형건"]}]},
+    {date:"2026-09-17",course:"북코스",note:"이벤트: 4등/8등 맞추기 (둘 다 맞추면 과일, 1명만 맞추면 공, 못 맞추면 없음)",
+     groups:[{time:"12:17",players:["최민국","이지훈","이성재","배현준"]},{time:"12:24",players:["최영근","윤준원","박인혁","홍석환"]},{time:"12:31",players:["이재국","이강진","장민구","전형건"]}],
+     scores:{},
+     awards:[
+      {title:"전체에서 제일 잘친사람",prize:"과일",winners:["이지훈"]},
+      {title:"전월 누적 평균 대비 제일 개선 3명",prize:"",winners:["장민구","이재국","윤준원"]},
+      {title:"12명 그린피 5만원씩 지원(60만원)",prize:"",winners:[]},
+      {title:"행운상 2명(랜덤 사다리타기)",prize:"공",winners:["최영근","이성재"]},
+      {title:"라베 갱신",prize:"과일",winners:[]},
+      {title:"다 버디상",prize:"공",winners:["전형건"]},
+      {title:"다 더블상",prize:"공",winners:["홍석환"]},
+      {title:"다 트리플상",prize:"공",winners:["박인혁"]},
+      {title:"이벤트: 4등/8등 맞추기",prize:"과일",winners:["이강진"]}]},
+    {date:"2026-10-15",course:"서코스",note:"",
+     groups:[{time:"12:17",players:["이지훈","배현준","최민국","홍석환"]},{time:"12:24",players:["박인혁","승용수","전형건","최기성"]},{time:"12:31",players:["이성재","이재국","장민구","최영근"]}],
+     scores:{},
+     awards:[
+      {title:"전체에서 제일 잘친사람",prize:"과일",winners:["이성재"]},
+      {title:"전월 누적 평균 대비 제일 개선 3명",prize:"과일",winners:["이재국","승용수"]},
+      {title:"12명 그린피 5만원씩 지원(60만원)",prize:"",winners:[]},
+      {title:"행운상 2명(랜덤 사다리타기)",prize:"공",winners:["박인혁","홍석환"]},
+      {title:"라베 갱신",prize:"과일",winners:["이재국"]},
+      {title:"다 버디상",prize:"공",winners:[]},
+      {title:"다 파상",prize:"공",winners:[]},
+      {title:"다 더블상",prize:"공",winners:["전형건"]},
+      {title:"이벤트: 니어핀상",prize:"과일",winners:[]},
+      {title:"이벤트: 전후반 스코어 차 최소상",prize:"과일",winners:["장민구"]}]}
+  ],
+  ledger: [
+    {month:"2026-01",cat:"이월",item:"전년 이월(역산)",amount:254685,memo:"2월 잔액 28,236,212에서 역산"},
+    {month:"2026-01",cat:"이자",item:"1월 이자",amount:19,memo:""},
+    {month:"2026-01",cat:"회비",item:"회비 미지급금",amount:980000,memo:""},
+    {month:"2026-01",cat:"회비",item:"26년 회비",amount:27000000,memo:"성재형님 +100만원"},
+    {month:"2026-02",cat:"이자",item:"2월 이자",amount:1508,memo:""},
+    {month:"2026-03",cat:"프로샵",item:"프로샵",amount:-510000,memo:""},
+    {month:"2026-03",cat:"식음료",item:"식음료계",amount:-1765500,memo:""},
+    {month:"2026-03",cat:"그린피지원",item:"60만원 지원",amount:-600000,memo:""},
+    {month:"2026-03",cat:"기타출금",item:"1등카트 지원",amount:-120000,memo:""},
+    {month:"2026-04",cat:"이자",item:"4월 이자",amount:1782,memo:""},
+    {month:"2026-04",cat:"프로샵",item:"프로샵",amount:-710000,memo:""},
+    {month:"2026-04",cat:"식음료",item:"식음료계",amount:-1688000,memo:""},
+    {month:"2026-04",cat:"그린피지원",item:"60만원 지원",amount:-600000,memo:""},
+    {month:"2026-05",cat:"이자",item:"5월 이자",amount:1582,memo:""},
+    {month:"2026-05",cat:"기타입금",item:"배현준 입금",amount:300000,memo:"홍석환 라운딩비 지원"},
+    {month:"2026-05",cat:"기타출금",item:"출금",amount:-220000,memo:""},
+    {month:"2026-05",cat:"프로샵",item:"프로샵",amount:-610000,memo:""},
+    {month:"2026-05",cat:"그린피지원",item:"60만원 지원",amount:-600000,memo:""},
+    {month:"2026-05",cat:"식음료",item:"식음료계",amount:-1397500,memo:""},
+    {month:"2026-06",cat:"이자",item:"6월 이자",amount:1444,memo:""},
+    {month:"2026-06",cat:"기타입금",item:"휘슬링 내기 후 잔액",amount:447000,memo:""},
+    {month:"2026-06",cat:"프로샵",item:"프로샵",amount:-829500,memo:""},
+    {month:"2026-06",cat:"그린피지원",item:"60만원 지원",amount:-600000,memo:""},
+    {month:"2026-06",cat:"식음료",item:"식음료계",amount:-1329500,memo:""},
+    {month:"2026-07",cat:"이자",item:"7월 이자",amount:1579,memo:""},
+    {month:"2026-07",cat:"프로샵",item:"프로샵",amount:-1030000,memo:""},
+    {month:"2026-07",cat:"그린피지원",item:"60만원 지원",amount:-600000,memo:""},
+    {month:"2026-07",cat:"식음료",item:"식음료계",amount:-1340500,memo:""},
+    {month:"2026-07",cat:"이자",item:"이자(7/25)",amount:1082,memo:""},
+    {month:"2026-08",cat:"이자",item:"이자(8/29)",amount:1184,memo:""},
+    {month:"2026-09",cat:"프로샵",item:"프로샵",amount:-900000,memo:""},
+    {month:"2026-09",cat:"식음료",item:"식음료계",amount:-1399000,memo:""},
+    {month:"2026-09",cat:"그린피지원",item:"60만원 지원",amount:-600000,memo:""},
+    {month:"2026-10",cat:"이자",item:"이자",amount:886,memo:""},
+    {month:"2026-10",cat:"프로샵",item:"프로샵",amount:-1120000,memo:""},
+    {month:"2026-10",cat:"식음료",item:"식음료계",amount:-1485000,memo:""},
+    {month:"2026-10",cat:"그린피지원",item:"60만원 지원",amount:-600000,memo:""}
+  ]
+};
+const CATS = ["회비","이자","이월","기타입금","프로샵","식음료","그린피지원","기타출금"];
+const PER_PERSON_CATS = ["프로샵","식음료"];   // 1인당 지출 계산 대상 (엑셀과 동일)
+
+/* ===================== 저장소 (Firebase + 로컬) ===================== */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAUipK542rIIr7Ejr_9nsLoOu_R86tFcWo",
+  databaseURL: "https://ds-ob-golf-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ds-ob-golf"
+};
+const DB_PATH = "dsob2026";          // 기존 앱의 app_data 와 별도 경로
+const LS_KEY = "dsob2026_data";
+let S = null, dbRef = null;
+
+function clone(o){return JSON.parse(JSON.stringify(o))}
+function lsGet(){try{const v=localStorage.getItem(LS_KEY);return v?JSON.parse(v):null}catch(e){return null}}
+function lsSet(v){try{localStorage.setItem(LS_KEY,JSON.stringify(v))}catch(e){}}
+function normalize(d){
+  d=d||clone(SEED);
+  d.members=d.members||[];d.rounds=d.rounds||[];d.ledger=d.ledger||[];d.headcount=d.headcount||12;
+  d.rounds.forEach(r=>{r.groups=r.groups||[];r.groups.forEach(g=>g.players=g.players||[]);r.scores=r.scores||{};r.awards=(r.awards||[]).map(a=>({...a,winners:a.winners||[]}))});
+  return d;
+}
+function save(){
+  lsSet(S);
+  if(dbRef){dbRef.set(S).catch(e=>setSync(false,"저장 실패: "+e.message))}
+}
+function setSync(on,txt){const el=document.getElementById("sync");el.className=on?"on":"off";el.textContent=txt}
+function initFirebase(){
+  if(typeof firebase==="undefined"){setSync(false,"로컬 저장");return}
+  try{
+    firebase.initializeApp(FIREBASE_CONFIG);
+    const db=firebase.database();
+    dbRef=db.ref(DB_PATH);
+    db.ref(".info/connected").on("value",s=>setSync(!!s.val(),s.val()?"동기화됨":"연결 중…"));
+    dbRef.on("value",snap=>{
+      const v=snap.val();
+      if(!v){dbRef.set(S);return}            // 첫 실행: 초기 데이터 업로드
+      if(document.activeElement&&document.activeElement.matches("input,select"))return; // 입력 중엔 덮어쓰지 않음
+      S=normalize(v);lsSet(S);render();
+    });
+  }catch(e){setSync(false,"로컬 저장");dbRef=null}
+}
+
+/* ===================== 계산 ===================== */
+const won=n=>(n<0?"-":"")+Math.abs(Math.round(n)).toLocaleString("ko-KR");
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const memberNames=()=>S.members.map(m=>m.name);
+const isMember=n=>memberNames().includes(n);
+const rLabel=(r,i)=>`${i+1}차 · ${+r.date.slice(5,7)}/${+r.date.slice(8,10)}`;
+const players=r=>r.groups.flatMap(g=>g.players).filter(Boolean);
+const sortedRounds=()=>S.rounds.map((r,i)=>({r,i})).sort((a,b)=>a.r.date.localeCompare(b.r.date));
+
+function stats(){
+  const res={};
+  S.members.forEach(m=>res[m.name]={name:m.name,n:0,sum:0,avg:null,best:m.best||null,bestNote:m.bestNote||"",attend:0});
+  sortedRounds().forEach(({r})=>{
+    players(r).forEach(p=>{if(res[p])res[p].attend++});
+    Object.entries(r.scores).forEach(([p,s])=>{
+      if(!res[p]||!s)return; const x=res[p]; x.n++; x.sum+=s;
+      if(x.best==null||s<x.best){x.best=s;x.bestNote=`${r.date.slice(2,4)}.${+r.date.slice(5,7)}월`}
+    });
+  });
+  const arr=Object.values(res);arr.forEach(x=>x.avg=x.n?x.sum/x.n:null);
+  const ranked=arr.filter(x=>x.avg!=null).sort((a,b)=>a.avg-b.avg);
+  ranked.forEach((x,k)=>x.rank=k+1);
+  return arr;
+}
+function improvement(ri){   // 해당 라운드 직전까지 누적 평균 대비 개선 타수
+  const target=S.rounds[ri];const prev={};
+  sortedRounds().forEach(({r,i})=>{if(r.date<target.date)Object.entries(r.scores).forEach(([p,s])=>{if(s){prev[p]=prev[p]||[];prev[p].push(s)}})});
+  return Object.entries(target.scores).filter(([p,s])=>s&&isMember(p)&&prev[p]).map(([p,s])=>{const a=prev[p].reduce((x,y)=>x+y,0)/prev[p].length;return{p,s,a,d:a-s}}).sort((x,y)=>y.d-x.d);
+}
+function monthly(){
+  const months=[...new Set(S.ledger.map(e=>e.month))].sort();
+  let bal=0;const out=[];const perList=[];
+  months.forEach(m=>{
+    const es=S.ledger.filter(e=>e.month===m);
+    const inc=es.filter(e=>e.amount>0).reduce((a,e)=>a+e.amount,0);
+    const out_=es.filter(e=>e.amount<0).reduce((a,e)=>a-e.amount,0);
+    bal+=inc-out_;
+    const rs=S.rounds.filter(r=>r.date.slice(0,7)===m);
+    const heads=rs.reduce((a,r)=>a+players(r).length,0);
+    const pp=es.filter(e=>PER_PERSON_CATS.includes(e.cat)).reduce((a,e)=>a-e.amount,0);
+    let per=null,cum=null;
+    if(rs.length&&heads){per=pp/heads;perList.push(per);cum=perList.reduce((a,b)=>a+b,0)/perList.length}
+    out.push({m,inc,out:out_,bal,heads,per,cum,rounds:rs.length});
+  });
+  return out;
+}
+function mates(){
+  const names=memberNames();const M={};names.forEach(a=>{M[a]={};names.forEach(b=>M[a][b]=0)});
+  S.rounds.forEach(r=>r.groups.forEach(g=>{const ps=g.players.filter(isMember);ps.forEach(a=>ps.forEach(b=>{if(a!==b)M[a][b]++}))}));
+  return M;
+}
+
+/* ===================== 화면 ===================== */
+let TAB="rounds",CUR=null;
+function render(){
+  const f={rounds:vRounds,scores:vScores,mates:vMates,money:vMoney,members:vMembers}[TAB];
+  document.getElementById("app").innerHTML=f();
+}
+function inp(path,val,cls="",type="text",extra=""){return `<input class="${cls}" type="${type}" data-path="${path}" value="${esc(val)}" ${extra}>`}
+
+function vRounds(){
+  const sr=sortedRounds();
+  if(CUR==null||!S.rounds[CUR])CUR=sr.length?sr[sr.length-1].i:null;
+  let h=`<div class="chips">${sr.map(({r,i})=>`<span class="chip ${i===CUR?"on":""}" data-act="pick" data-i="${i}">${rLabel(r,sr.findIndex(x=>x.i===i))} ${esc(r.course)}</span>`).join("")}<span class="chip" data-act="addRound">+ 라운드 추가</span></div>`;
+  if(CUR==null)return h+`<div class="card muted">라운드가 없습니다.</div>`;
+  const r=S.rounds[CUR],P=`rounds.${CUR}`;
+  const imp=improvement(CUR);
+  const sc=Object.entries(r.scores).filter(([p,s])=>s&&isMember(p)).sort((a,b)=>a[1]-b[1]);
+  h+=`<div class="card"><h2>라운드 정보 <button class="x" data-act="delRound" title="라운드 삭제">삭제</button></h2>
+   <div class="row">날짜 ${inp(P+".date",r.date,"","date")} 코스 ${inp(P+".course",r.course,"","text",'style="width:110px"')}</div>
+   <div style="margin-top:8px">${inp(P+".note",r.note,"wide","text",'placeholder="메모 (팀전·라이벌전·이벤트 등)"')}</div></div>`;
+  h+=`<div class="grid2"><div class="card"><h2>조 편성 <button class="b ghost" data-act="addGroup">+ 조</button></h2>
+   <table><tr><th>티오프</th><th>멤버 (쉼표로 구분)</th><th></th></tr>
+   ${r.groups.map((g,gi)=>`<tr><td>${inp(`${P}.groups.${gi}.time`,g.time,"","text",'style="width:62px"')}</td><td>${inp(`${P}.groups.${gi}.players`,g.players.join(", "),"wide","text",'data-list="1"')}</td><td><button class="x" data-act="delGroup" data-g="${gi}">×</button></td></tr>`).join("")}</table>
+   <div class="muted" style="margin-top:6px">참가 ${players(r).length}명 · 게스트: ${players(r).filter(p=>!isMember(p)).map(esc).join(", ")||"없음"}</div></div>
+   <div class="card"><h2>스코어</h2><div class="tw"><table><tr><th>멤버</th><th class="n">타수</th><th class="n">직전 누적평균 대비</th></tr>
+   ${players(r).filter(isMember).map(p=>{const x=imp.find(z=>z.p===p);return `<tr><td>${esc(p)}</td><td class="n">${inp(`${P}.scores.${p}`,r.scores[p]??"","num","number",'inputmode="numeric"')}</td><td class="n">${x?`<span class="${x.d>=0?"up":"dn"}">${x.d>=0?"▼":"▲"} ${Math.abs(x.d).toFixed(1)}</span> <span class="muted">(${x.a.toFixed(1)})</span>`:"-"}</td></tr>`}).join("")}</table></div>
+   ${sc.length?`<div class="hint">최저타: <b>${esc(sc[0][0])} ${sc[0][1]}</b>${imp.length?` · 최다 개선: <b>${esc(imp[0].p)} ${imp[0].d.toFixed(1)}타</b>`:""}</div>`:`<div class="hint">스코어가 아직 입력되지 않았습니다.</div>`}</div></div>`;
+  h+=`<div class="card"><h2>포상 <button class="b ghost" data-act="addAward">+ 항목</button></h2><div class="tw"><table><tr><th>항목</th><th>상품</th><th>수상자 (쉼표로 구분)</th><th></th></tr>
+   ${r.awards.map((a,ai)=>`<tr><td>${inp(`${P}.awards.${ai}.title`,a.title,"","text",'style="width:260px"')}</td><td>${inp(`${P}.awards.${ai}.prize`,a.prize,"","text",'style="width:120px"')}</td><td>${inp(`${P}.awards.${ai}.winners`,a.winners.join(", "),"wide","text",'data-list="1" style="min-width:200px"')}</td><td><button class="x" data-act="delAward" data-a="${ai}">×</button></td></tr>`).join("")}</table></div></div>`;
+  return h;
+}
+
+function vScores(){
+  const st=stats().sort((a,b)=>(a.rank??99)-(b.rank??99));
+  const sr=sortedRounds();
+  const missing=sr.filter(({r})=>!Object.values(r.scores).some(Boolean)).map(({r},k)=>r.date);
+  let h=missing.length?`<div class="hint" style="margin:0 0 14px">스코어 미입력 라운드: ${missing.join(", ")} — 라운드 탭에서 입력하면 집계에 반영됩니다.</div>`:"";
+  h+=`<div class="card"><h2>개인 집계</h2><div class="tw"><table><tr><th>순위</th><th>이름</th><th class="n">참석</th><th class="n">라운딩수</th><th class="n">타수합</th><th class="n">평균</th><th class="n">라베</th><th>라베 시점</th></tr>
+   ${st.map(x=>`<tr><td>${x.rank??"-"}</td><td>${esc(x.name)}</td><td class="n">${x.attend}</td><td class="n">${x.n}</td><td class="n">${x.sum||0}</td><td class="n">${x.avg!=null?x.avg.toFixed(1):"-"}</td><td class="n">${x.best??"-"}</td><td>${esc(x.bestNote)}</td></tr>`).join("")}</table></div></div>`;
+  h+=`<div class="card"><h2>라운드별 스코어</h2><div class="tw"><table><tr><th>이름</th>${sr.map(({r},k)=>`<th class="n">${k+1}차<br><span class="muted">${r.date.slice(5)}</span></th>`).join("")}</tr>
+   ${S.members.map(m=>`<tr><td>${esc(m.name)}</td>${sr.map(({r})=>{const s=r.scores[m.name];const best=Object.entries(r.scores).filter(([p,v])=>v&&isMember(p)).reduce((a,[,v])=>Math.min(a,v),999);return `<td class="n">${s?(s===best?`<b class="up">${s}</b>`:s):(players(r).includes(m.name)?"<span class='muted'>?</span>":"")}</td>`}).join("")}</tr>`).join("")}</table></div>
+   <div class="muted" style="margin-top:6px">파란 굵은 글씨 = 해당 라운드 최저타 · ? = 참가했으나 스코어 미입력</div></div>`;
+  return h;
+}
+
+function vMates(){
+  const M=mates(),names=memberNames();
+  const max=Math.max(1,...names.flatMap(a=>names.map(b=>M[a][b])));
+  let total=0;
+  const rows=names.map(a=>{const s=names.reduce((t,b)=>t+M[a][b],0);total+=s;
+    return `<tr><th>${esc(a)}</th>${names.map(b=>{const v=M[a][b];const al=a===b?0:v/max*.75;return `<td style="background:${a===b?"#eee":`rgba(45,106,79,${al})`};color:${al>.45?"#fff":"inherit"}">${a===b?"":v}</td>`}).join("")}<td class="n"><b>${s}</b></td></tr>`}).join("");
+  return `<div class="card"><h2>동반 라운드 횟수 <span class="muted">조 편성에서 자동 계산 · 멤버만</span></h2><div class="tw"><table class="mx"><tr><th></th>${names.map(n=>`<th>${esc(n.slice(1))}</th>`).join("")}<th class="n">합계</th></tr>${rows}
+   <tr class="sub"><td></td><td colspan="${names.length}"></td><td class="n">${total}</td></tr></table></div>
+   <div class="muted" style="margin-top:6px">다음 조 편성 시 숫자가 작은(아직 같이 안 친) 조합을 우선 묶으면 고르게 섞입니다.</div></div>`;
+}
+
+function vMoney(){
+  const mo=monthly(),last=mo[mo.length-1]||{bal:0};
+  const inc=S.ledger.filter(e=>e.amount>0).reduce((a,e)=>a+e.amount,0);
+  const out=S.ledger.filter(e=>e.amount<0).reduce((a,e)=>a-e.amount,0);
+  let h=`<div class="kpis"><div class="kpi"><span class="muted">현재 잔액</span><b>${won(last.bal)}</b></div>
+   <div class="kpi"><span class="muted">누적 입금</span><b>${won(inc)}</b></div>
+   <div class="kpi"><span class="muted">누적 지출</span><b>${won(out)}</b></div>
+   <div class="kpi"><span class="muted">잔액 ÷ ${S.headcount}명</span><b>${won(last.bal/S.headcount)}</b><span class="muted">남은 예산 1인당</span></div></div>`;
+  h+=`<div class="card"><h2>월별 요약</h2><div class="tw"><table><tr><th>월</th><th class="n">입금</th><th class="n">지출</th><th class="n">월말 잔액</th><th class="n">라운드 인원</th><th class="n">1인당 지출</th><th class="n">누적 평균</th></tr>
+   ${mo.map(x=>`<tr><td>${+x.m.slice(5)}월</td><td class="n">${won(x.inc)}</td><td class="n">${won(x.out)}</td><td class="n"><b>${won(x.bal)}</b></td><td class="n">${x.heads||"-"}</td><td class="n">${x.per!=null?won(x.per):"-"}</td><td class="n">${x.cum!=null?won(x.cum):"-"}</td></tr>`).join("")}</table></div>
+   <div class="muted" style="margin-top:6px">1인당 지출 = (프로샵 + 식음료) ÷ 해당 월 라운드 참가 인원(게스트 포함)</div></div>`;
+  const months=[...new Set(S.ledger.map(e=>e.month))].sort();
+  let bal=0;
+  h+=`<div class="card"><h2>입출금 내역 <button class="b" data-act="addEntry">+ 내역 추가</button></h2><div class="tw"><table><tr><th>월</th><th>구분</th><th>항목</th><th class="n">금액 (출금은 -)</th><th>메모</th><th class="n">잔액</th><th></th></tr>`;
+  months.forEach(m=>{
+    S.ledger.forEach((e,i)=>{if(e.month!==m)return;bal+=e.amount;
+      h+=`<tr><td>${inp(`ledger.${i}.month`,e.month,"","month",'style="width:130px"')}</td>
+      <td><select data-path="ledger.${i}.cat">${CATS.map(c=>`<option ${c===e.cat?"selected":""}>${c}</option>`).join("")}</select></td>
+      <td>${inp(`ledger.${i}.item`,e.item,"","text",'style="width:150px"')}</td>
+      <td class="n">${inp(`ledger.${i}.amount`,e.amount,"num "+(e.amount<0?"dn":"up"),"number",'style="width:110px"')}</td>
+      <td>${inp(`ledger.${i}.memo`,e.memo,"","text",'style="width:170px"')}</td>
+      <td class="n">${won(bal)}</td><td><button class="x" data-act="delEntry" data-e="${i}">×</button></td></tr>`});
+    h+=`<tr class="sub"><td colspan="5">${+m.slice(5)}월 잔액</td><td class="n">${won(bal)}</td><td></td></tr>`;
+  });
+  return h+`</table></div></div>`;
+}
+
+function vMembers(){
+  return `<div class="card"><h2>멤버 <button class="b ghost" data-act="addMember">+ 멤버</button></h2><table><tr><th>이름</th><th class="n">시즌 전 라베 / 기록</th><th>라베 메모</th><th></th></tr>
+   ${S.members.map((m,i)=>`<tr><td>${inp(`members.${i}.name`,m.name,"","text",'style="width:100px"')}</td><td class="n">${inp(`members.${i}.best`,m.best??"","num","number")}</td><td>${inp(`members.${i}.bestNote`,m.bestNote,"","text",'style="width:100px"')}</td><td><button class="x" data-act="delMember" data-m="${i}">×</button></td></tr>`).join("")}</table>
+   <div class="muted" style="margin-top:6px">라운드 스코어가 여기 라베보다 낮으면 스코어 탭의 라베가 자동 갱신됩니다. 조 편성에 멤버 목록에 없는 이름을 넣으면 게스트로 처리됩니다.</div></div>
+   <div class="card"><h2>설정</h2><div class="row">잔여 예산 1인당 계산 인원 ${inp("headcount",S.headcount,"num","number")} 명</div></div>
+   <div class="card"><h2>백업</h2><div class="row"><button class="b ghost" data-act="export">JSON 내보내기</button><label class="b ghost" style="border:1px solid var(--green);border-radius:6px;padding:6px 12px;color:var(--green);cursor:pointer">JSON 가져오기<input type="file" accept=".json" id="imp" hidden></label><button class="b ghost" data-act="reset" style="color:var(--red);border-color:var(--red)">초기 데이터로 되돌리기</button></div></div>`;
+}
+
+/* ===================== 이벤트 ===================== */
+function setPath(path,val){
+  const k=path.split(".");let o=S;
+  for(let i=0;i<k.length-1;i++){o=o[k[i]]}
+  o[k[k.length-1]]=val;
+}
+document.addEventListener("change",e=>{
+  const t=e.target;
+  if(t.id==="imp"){const f=t.files[0];if(!f)return;f.text().then(x=>{try{S=normalize(JSON.parse(x));save();render()}catch(err){alert("파일 형식 오류")}});return}
+  const p=t.dataset.path;if(!p)return;
+  let v=t.value;
+  if(t.dataset.list)v=v.split(/[,，]/).map(s=>s.trim()).filter(Boolean);
+  else if(t.type==="number")v=v===""?null:Number(v);
+  if(/\.scores\./.test(p)&&v==null){const k=p.split(".");delete S.rounds[k[1]].scores[k.slice(3).join(".")]}
+  else setPath(p,v);
+  save();render();
+});
+document.addEventListener("click",e=>{
+  const tb=e.target.closest("#tabs button");
+  if(tb){TAB=tb.dataset.tab;document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b===tb));render();return}
+  const a=e.target.closest("[data-act]");if(!a)return;
+  const act=a.dataset.act,r=S.rounds[CUR];
+  switch(act){
+    case "pick":CUR=+a.dataset.i;break;
+    case "addRound":S.rounds.push({date:new Date().toISOString().slice(0,10),course:"",note:"",groups:[{time:"",players:[]},{time:"",players:[]},{time:"",players:[]}],scores:{},
+      awards:["전체에서 제일 잘친사람","전월 누적 평균 대비 제일 개선","12명 그린피 5만원씩 지원(60만원)","행운상 2명(랜덤 사다리타기)","라베 갱신"].map(t=>({title:t,prize:"",winners:[]}))});CUR=S.rounds.length-1;break;
+    case "delRound":if(!confirm("이 라운드를 삭제할까요?"))return;S.rounds.splice(CUR,1);CUR=null;break;
+    case "addGroup":r.groups.push({time:"",players:[]});break;
+    case "delGroup":r.groups.splice(+a.dataset.g,1);break;
+    case "addAward":r.awards.push({title:"",prize:"",winners:[]});break;
+    case "delAward":r.awards.splice(+a.dataset.a,1);break;
+    case "addEntry":S.ledger.push({month:new Date().toISOString().slice(0,7),cat:"프로샵",item:"",amount:0,memo:""});break;
+    case "delEntry":if(!confirm("이 내역을 삭제할까요?"))return;S.ledger.splice(+a.dataset.e,1);break;
+    case "addMember":S.members.push({name:"새 멤버",best:null,bestNote:""});break;
+    case "delMember":if(!confirm("이 멤버를 삭제할까요?"))return;S.members.splice(+a.dataset.m,1);break;
+    case "export":{const b=new Blob([JSON.stringify(S,null,1)],{type:"application/json"});const u=URL.createObjectURL(b);const l=document.createElement("a");l.href=u;l.download=`dsob2026_${new Date().toISOString().slice(0,10)}.json`;l.click();return}
+    case "reset":if(!confirm("모든 수정 내용을 지우고 초기 데이터로 되돌릴까요?"))return;S=normalize(clone(SEED));break;
+    default:return;
+  }
+  save();render();
+});
+
+S=normalize(lsGet());
+render();
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js" onload="initFirebase()" onerror="setSync(false,'로컬 저장')"></script>
+</body>
+</html>
