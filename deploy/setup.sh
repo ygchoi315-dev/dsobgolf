@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # DS OB Golf 기록 페이지 서버 설치 스크립트 (Ubuntu + nginx)
-#   사용법:  sudo bash deploy/setup.sh <로그인아이디>
+#   맥미니의 deploy.sh 가 index.html 과 함께 서버 /tmp/dsob/ 로 올린 뒤 실행합니다.
+#   직접 실행:  sudo bash /tmp/dsob/setup.sh <로그인아이디>
 #   - 기존 nginx 사이트(ygarchive 등)는 건드리지 않고 dsobgolf 사이트만 추가합니다.
 #   - 비밀번호는 실행 중에 직접 입력합니다 (터미널 필요).
 set -euo pipefail
 
 DOMAIN="dsobgolf.duckdns.org"
-REPO="https://github.com/ygchoi315-dev/dsobgolf.git"
-BRANCH="${BRANCH:-claude/brave-fermat-d8cldv}"
+SRC="$(cd "$(dirname "$0")" && pwd)"     # index.html 이 함께 올라온 폴더
 WEB=/var/www/dsobgolf
 DATA=/var/lib/dsobgolf
 HTPASS=/etc/nginx/.htpasswd-dsobgolf
@@ -18,14 +18,12 @@ USER_ID="${1:-}"
 
 echo "== 1/6 패키지 설치"
 apt-get update -qq
-apt-get install -y -qq git apache2-utils certbot python3-certbot-nginx >/dev/null
+apt-get install -y -qq apache2-utils certbot python3-certbot-nginx >/dev/null
 
-echo "== 2/6 페이지 파일 받기 ($WEB)"
-if [ -d "$WEB/.git" ]; then
-  git -C "$WEB" fetch -q origin "$BRANCH" && git -C "$WEB" checkout -q "$BRANCH" && git -C "$WEB" reset -q --hard "origin/$BRANCH"
-else
-  git clone -q -b "$BRANCH" "$REPO" "$WEB"
-fi
+echo "== 2/6 페이지 파일 설치 ($WEB)"
+[ -f "$SRC/index.html" ] || { echo "$SRC/index.html 이 없습니다. 맥미니에서 deploy.sh 로 실행하세요."; exit 1; }
+mkdir -p "$WEB"
+install -m 644 "$SRC/index.html" "$WEB/index.html"
 
 echo "== 3/6 데이터 폴더 ($DATA)"
 mkdir -p "$DATA"
