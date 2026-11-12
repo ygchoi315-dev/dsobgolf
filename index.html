@@ -54,7 +54,7 @@ button.x{border:0;background:none;color:var(--red);cursor:pointer;font-size:16px
 </head>
 <body>
 <header>
-  <h1>DS OB Golf 2026 <span id="sync" class="off">로컬 저장</span></h1>
+  <h1>DS OB Golf 2026 <span id="sync" class="off">연결 중…</span></h1>
   <nav id="tabs">
     <button data-tab="rounds" class="on">라운드</button>
     <button data-tab="scores">스코어</button>
@@ -212,15 +212,11 @@ const SEED = {
 const CATS = ["회비","이자","이월","기타입금","프로샵","식음료","그린피지원","기타출금"];
 const PER_PERSON_CATS = ["프로샵","식음료"];   // 1인당 지출 계산 대상 (엑셀과 동일)
 
-/* ===================== 저장소 (Firebase + 로컬) ===================== */
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyAUipK542rIIr7Ejr_9nsLoOu_R86tFcWo",
-  databaseURL: "https://ds-ob-golf-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "ds-ob-golf"
-};
-const DB_PATH = "dsob2026";          // 기존 앱의 app_data 와 별도 경로
+/* ===================== 저장소 (본인 서버 data.json + 로컬 캐시) ===================== */
+// 서버: GET/PUT  data/data.json  (nginx WebDAV, 비밀번호 보호)
+const DATA_URL = "data/data.json";
 const LS_KEY = "dsob2026_data";
-let S = null, dbRef = null;
+let S = null, saveTimer = null;
 
 function clone(o){return JSON.parse(JSON.stringify(o))}
 function lsGet(){try{const v=localStorage.getItem(LS_KEY);return v?JSON.parse(v):null}catch(e){return null}}
@@ -231,25 +227,25 @@ function normalize(d){
   d.rounds.forEach(r=>{r.groups=r.groups||[];r.groups.forEach(g=>g.players=g.players||[]);r.scores=r.scores||{};r.awards=(r.awards||[]).map(a=>({...a,winners:a.winners||[]}))});
   return d;
 }
-function save(){
-  lsSet(S);
-  if(dbRef){dbRef.set(S).catch(e=>setSync(false,"저장 실패: "+e.message))}
-}
 function setSync(on,txt){const el=document.getElementById("sync");el.className=on?"on":"off";el.textContent=txt}
-function initFirebase(){
-  if(typeof firebase==="undefined"){setSync(false,"로컬 저장");return}
+async function putServer(){
   try{
-    firebase.initializeApp(FIREBASE_CONFIG);
-    const db=firebase.database();
-    dbRef=db.ref(DB_PATH);
-    db.ref(".info/connected").on("value",s=>setSync(!!s.val(),s.val()?"동기화됨":"연결 중…"));
-    dbRef.on("value",snap=>{
-      const v=snap.val();
-      if(!v){dbRef.set(S);return}            // 첫 실행: 초기 데이터 업로드
-      if(document.activeElement&&document.activeElement.matches("input,select"))return; // 입력 중엔 덮어쓰지 않음
-      S=normalize(v);lsSet(S);render();
-    });
-  }catch(e){setSync(false,"로컬 저장");dbRef=null}
+    const r=await fetch(DATA_URL,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(S)});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    setSync(true,"서버 저장됨 "+new Date().toTimeString().slice(0,5));
+  }catch(e){setSync(false,"서버 저장 실패 · 기기에만 저장됨")}
+}
+function save(){
+  lsSet(S);setSync(false,"저장 중…");
+  clearTimeout(saveTimer);saveTimer=setTimeout(putServer,400);
+}
+async function loadServer(){
+  try{
+    const r=await fetch(DATA_URL,{cache:"no-store"});
+    if(r.status===404){S=normalize(clone(SEED));render();await putServer();return}   // 첫 실행: 초기 데이터 업로드
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    S=normalize(await r.json());lsSet(S);render();setSync(true,"서버 연결됨");
+  }catch(e){setSync(false,"오프라인 · 기기 저장본 표시")}
 }
 
 /* ===================== 계산 ===================== */
@@ -438,8 +434,7 @@ document.addEventListener("click",e=>{
 
 S=normalize(lsGet());
 render();
+loadServer();
 </script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js" onload="initFirebase()" onerror="setSync(false,'로컬 저장')"></script>
 </body>
 </html>
